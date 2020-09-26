@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>File listing</title>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body >
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/bootstrap/js/bootstrap.js"></script>
+<nav class="navbar navbar-light" id="navbar">
+    <h1 class="navbar-brand" href="#" >
+        Insight
+    </h1 >
+    <div id="courseName"></div>
+
+</nav>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">How did users interacted with the course</h5>
+                <p class="card-text">A Sankey Diagram visualise the user behaviour.</p>
+                <a href="vdSankey.html" class="btn btn-primary ">Go Sankey</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Participation funnel</h5>
+                <p class="card-text">A line chart to show user's participation in each unit.</p>
+                <a href="funnel.html" class="btn btn-primary">Go Participation</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Exit points</h5>
+                <p class="card-text">A bar chart to show exit user's population in each unit.</p>
+                <a href="exitpoints.html" class="btn btn-primary">Go Exit points</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Merimekko </h5>
+                <p class="card-text">A merimekko chart to visualize user attribute statistics.</p>
+                <a href="marimekko.html" class="btn btn-primary">Go Merimekko</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Active times</h5>
+                <p class="card-text">A line chart to show the active populations each day.</p>
+                <a href="activetimes.html" class="btn btn-primary">Go active times</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Daily active times</h5>
+                <p class="card-text">Visualize the active populations in different time.</p>
+                <a href="activetimesdaily.html" class="btn btn-primary">Go daily active times</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Discussion summary</h5>
+                <p class="card-text">Compare discussion behavior statistics.</p>
+                <a href="discussionSummary.html" class="btn btn-primary">Go discussion</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    d3.json('/')
+        .header('content-type', 'application/json')
+        .post(JSON.stringify({course: ""}), function (error, data) {
+            if(error) throw error;
+            var courseName = data["courseName"];
+            var hasCluster = data["hasCluster"];// 0, 1
+            console.log(courseName);
+            document.getElementById("courseName").innerHTML = courseName;
+            localStorage.setItem("courseName", courseName);
+            localStorage.setItem("hasCluster", hasCluster);
+            localStorage.setItem("clusterIndex",-1);
+        })
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+java.io.IOException: Failed to bind to 0.0.0.0/0.0.0.0:8001
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:346)
+	at org.eclipse.jetty.server.ServerConnector.open(ServerConnector.java:308)
+	at org.eclipse.jetty.server.AbstractNetworkConnector.doStart(AbstractNetworkConnector.java:80)
+	at org.eclipse.jetty.server.ServerConnector.doStart(ServerConnector.java:236)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:68)
+	at org.eclipse.jetty.server.Server.doStart(Server.java:396)
+	at org.eclipse.jetty.util.component.AbstractLifeCycle.start(AbstractLifeCycle.java:68)
+	at ui.UIController$1.call(UIController.java:313)
+	at ui.UIController$1.call(UIController.java:1)
+	at javafx.concurrent.Task$TaskCallable.call(Task.java:1423)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.net.BindException: Address already in use
+	at sun.nio.ch.Net.bind0(Native Method)
+	at sun.nio.ch.Net.bind(Net.java:433)
+	at sun.nio.ch.Net.bind(Net.java:425)
+	at sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:223)
+	at sun.nio.ch.ServerSocketAdaptor.bind(ServerSocketAdaptor.java:74)
+	at org.eclipse.jetty.server.ServerConnector.openAcceptChannel(ServerConnector.java:342)
+	... 11 more

@@ -1,0 +1,153 @@
+<!--Derived from https://bl.ocks.org/mbostock/3885304
+https://bl.ocks.org/d3noob/3c040800ff6457717cca586ae9547dbf (tick text rotation)-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+<style>
+#modeselect fieldset {display: inline-block;}
+#modeselect span {margin-right: 30px;}
+svg {border: 1px solid black;}
+.bar {fill: steelblue;}
+.bar:hover {fill: brown;}
+</style>
+</head>
+<body>
+
+<div id=modeselect>
+  <fieldset>
+    <span><input id=exithighest type=radio name=mode value=exithighest checked>
+    <label for=exithighest>Highest Steps Seen</label></span>
+    <span><input id=exitchrono type=radio name=mode value=exitchrono>
+    <label for=exitchrono>Last Steps Seen</label></span>
+  </fieldset>
+  <fieldset>
+    <input id=lock-y-scale type=checkbox name=lock-y-scale>
+    <label for=lock-y-scale>Lock y Scale</label>
+  </fieldset>
+</div>
+<svg id=chart width=960 height=500></svg>
+
+<script src='lib/d3.v4.min.js'></script>
+<script>
+//setup margins
+var margin = {top: 20, right: 20, bottom: 180, left: 50};
+var svg = d3.select('#chart').append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+var width = d3.select('#chart').attr('width') - margin.left - margin.right;
+var height = d3.select('#chart').attr('height') - margin.top - margin.bottom;
+
+//scales, range setup
+var x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
+var y = d3.scaleLinear().rangeRound([height, 0]);
+
+update('exithighest');
+
+
+/*handlers for radio buttons; erase graph and draw other graph type*/
+document.getElementById('exithighest').onchange = function(){update('exithighest');}
+document.getElementById('exitchrono').onchange = function(){update('exitchrono');}
+
+
+function update(mode){
+  d3.csv('/')
+      .header('content-type','application/json')
+      .row(rcf)
+      .post(JSON.stringify({graphtype:mode}), function(error, data){
+        if(error) throw error;
+        svg.selectAll('*').remove();
+        drawColumnGraph(data);
+      });
+}
+
+
+//row conversion function
+function rcf(d, i, colNames){
+  d[colNames[1]] = +d[colNames[1]]; //coerce 2nd column to numbers
+  return d;
+}
+
+
+function drawColumnGraph(data){
+  var col0=data.columns[0];
+  var col1=data.columns[1];
+
+  //scales, domain setup
+  x.domain(data.map(function(d) { return d[col0]; }));
+  if(document.getElementById('lock-y-scale').checked===false)
+    y.domain([0, d3.max(data, function(d) { return d[col1]; })]);
+
+  //draw axes
+  svg.append('g')
+      .attr('class', 'axis axis--x')
+      .attr('transform', 'translate(0,' + height + ')')
+      .call(d3.axisBottom(x))
+    .selectAll('text')
+      .style('text-anchor', 'end')
+      .attr('dx', '-.8em')
+      .attr('dy', '.15em')
+      .attr('transform', 'rotate(-65)')
+      .each(function(){ //trim tick label and add tooltip with untrimmed label
+        var fullLabel = this.textContent; //cache full tick label text
+        this.textContent = '';  //then clear it
+
+        d3.select(this).append('title') //appends an svg title element
+            .text(fullLabel); //with the full tick label text
+        //alternate way:
+        //var svgTitleElement = document.createElementNS('http://www.w3.org/2000/svg','title');
+        //svgTitleElement.textContent = fullLabel;
+        //this.appendChild(svgTitleElement);
+
+        //append a text node with the truncated tick label text
+        var shortLabel = fullLabel.length > 32 ? (fullLabel.slice(0,30)+'...') : fullLabel;
+        this.appendChild(document.createTextNode(shortLabel));
+      });
+
+  svg.append('g')
+      .attr('class', 'axis axis--y')
+      .call(d3.axisLeft(y).ticks(10));
+
+  //gridlines
+  d3.select('.axis--y').selectAll('.tick').append('line')
+      .attr('y1', 0.5)
+      .attr('x2', width).attr('y2', 0.5)
+      .attr('stroke', 'black')
+      .attr('stroke-opacity', 0.2);
+
+  //axis titles
+  svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', width/2)
+      .attr('y', height+margin.bottom-20)
+      .text(col0);
+
+  svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -height/2)
+      .attr('y', -margin.left+20)
+      .text(col1);
+
+  //graph title
+  svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', width/2)
+      .attr('y', 10)
+      .text('Exit Points');
+
+  //draw columns
+  svg.selectAll('.bar')
+    .data(data)
+    .enter().append('rect')
+      .attr('class', 'bar')
+      .attr('x', function(d) { return x(d[col0]); })
+      .attr('y', function(d) { return y(d[col1]); })
+      .attr('width', x.bandwidth())
+      .attr('height', function(d) { return height - y(d[col1]); })
+    .append('title')
+      .text(function(d) { return d[col1] + ' students'; });
+}
+
+</script>
+</body>
+</html>

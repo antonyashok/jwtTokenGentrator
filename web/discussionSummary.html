@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body style="background-color: aliceblue; font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans;
+">
+<script src="lib/d3.v4.min.js"></script>
+<script>
+    const height = 1000;
+    const width = 2000;
+    const margin = ({top: 220, right: 10, bottom: 20, left: 40});
+   
+    const svg = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+
+    d3.csv('/')
+        .header('content-type', 'application/json')
+        .post(JSON.stringify({graphtype: 'discussionSummary'}), function (error, data) {
+            if (error) throw error;
+            data = Object.assign(data, {y: "population"});
+            data.sort((a, b) => d3.ascending(a["Discussion Category"], b["Discussion Category"]));
+            drawDiagram(data);
+            const svgHtml = document.querySelector("svg");
+            svgHtml.setAttribute("style", `transform: scale(0.8, 0.8); transition-property: transform; transition-duration: 0.25s; transition-timing-function: ease; position: absolute;`)
+
+
+        });
+
+    function drawDiagram(data) {
+        keys = data.columns.slice(1); // get the keys expect the first column [Viewed, Post, Comment]
+
+        groupKey = data.columns[0]; // discussion category
+
+        x0 = d3.scaleBand()
+            .domain(data.map(d => d[groupKey]))
+            .rangeRound([margin.left, width - margin.left])
+            .paddingInner(0.1);
+
+        x1 = d3.scaleBand()
+            .domain(keys)
+            .rangeRound([0, x0.bandwidth()])
+            .padding(0.05);
+
+        y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => Number(d["Viewed"]))]).nice()
+            .rangeRound([height - margin.bottom, margin.top])
+
+        yAxis = g => g
+            .attr("transform", `translate(${margin.left},-200)`)
+            .call(d3.axisLeft(y).ticks(null))
+            .call(g => g.select(".tick:last-of-type text")
+                .attr("x", 3)
+                .attr("text-anchor", "start")
+                .attr("font-weight", "bold")
+                .text(data.y));
+
+
+        xAxis = g => g
+            .attr("transform", `translate(0, ${height - margin.bottom -200})`)
+            .call(d3.axisBottom(x0).tickSizeOuter(0))
+            .selectAll("text")
+            .attr("transform", "rotate(90) translate(5, 0)")
+            .attr("text-anchor", "start")
+            .style("font-size", "1em")
+            .text(d => d.split("Discussion:")[0] +" "+d.split("Discussion:")[1] )
+
+        ;
+
+        color = d3.scaleOrdinal()
+            .range(["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087", "#f95d6a", "#ff7c43", "#ffa600"]);
+
+        legend = svg => {
+            const g = svg
+                .attr("transform",`translate(${width}, 0)`)
+                .attr("text-anchor", "end")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+                .selectAll("g")
+                .data(color.domain().slice())
+                .enter().append("g")
+                .attr("transform", (d,i)=> `translate(0, ${i*20})`);
+
+            g.append("rect")
+                .attr("x", -19)
+                .attr("width", 19)
+                .attr("height", 19)
+                .attr("fill", color)
+
+            g.append("text")
+                .attr("x", -24)
+                .attr("y", 9.5)
+                .attr("dy", "0.35em")
+                .text(d => d)
+        }
+
+        svg.append("g")
+            .selectAll("g")
+            .data(data)
+            .enter().append("g")
+            .attr("transform", d=> `translate(${x0(d[groupKey])}, 0)`)
+            .selectAll("rect")
+            .data(d => keys.map(key => ({key, value: d[key]})))
+            .enter().append("rect")
+            .attr("x", d=>x1(d.key))
+            .attr("y", d => y(d.value))
+            .attr("width", x1.bandwidth())
+            .attr("height", d => y(0) - y(d.value))
+            .attr("fill", d => color(d.key))
+            .attr("transform", `translate(0, -200)`)
+            .append("title")
+            .text(d => d.value)
+        ;
+
+
+        svg.append("g")
+            .call(xAxis);
+
+        svg.append("g")
+            .call(yAxis);
+
+        svg.append("g")
+            .call(legend)
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="lib/bootstrap/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css">
+
+    <link href=vdSankey.css rel=stylesheet type=text/css>
+</head>
+<body>
+<div id="filterbar">
+    <div class="field">
+        <div class="form-group row">
+            <label class="title col-sm-10 " for="pValueThreshold">Hightlight p-values</label>
+            <div class="col-sm-2">
+                <input class="form-control" id="highlightlowpvalues" type="checkbox" name="highlightlowpvalues"
+                       value="highlightlowpvalues">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="pValueThreshold" class="col-sm-4 col-form-label">Below</label>
+            <div class="col-sm-8">
+                <input class="form-control" id="pValueThreshold" type="number" name="pValueThreshold" min=0 max=100
+                       step=0.1 value=0.2>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Link width</div>
+        <div class="form-check">
+            <input class="form-check-input" id="countTraversals" type="radio" name="mode" value="countTraversals"
+                   checked>
+            <label class="form-check-label" for="countTraversals">times</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" id="countStudents" type="radio" name="mode" value="countStudents">
+            <label class="form-check-label" for="countStudents">students</label>
+        </div>
+    </div>
+    <hr>
+    <div class="field" id="clusteringField">
+        <div class="form-group row">
+            <label class="title col-sm-7" for="clusteringBtn">
+                Clustering Filter
+            </label>
+            <div class="col-sm-5">
+                <button type="button" class="btn btn-outline-dark btn-sm" id="clusteringBtn">Compare</button>
+            </div>
+        </div>
+        <div class="form-check">
+
+            <input class="form-check-input" type="radio" value="all" checked name="clusteringFilter" id="allClustering">
+            <label class="form-check-label">All Student</label>
+        </div>
+
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Date viewed</div>
+        <div class="form-group row">
+            <label for="fromdate" class="col-sm-4 col-form-label">From</label>
+            <div class="col-sm-8">
+                <input class="form-control" type="date" name="fromdate" id="fromdate">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="period" class="col-sm-4 col-form-label">To</label>
+            <div class="col-sm-8">
+                <input type="date" class="form-control" name="todate" id="todate">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="period">Period</label>
+            <div class="col-sm-8">
+
+                <select class="custom-select my-1 mr-sm-2" id="period" name="period">
+                    <option selected value="all">All the time</option>
+                    <option value="in">During the course period</option>
+                    <option value="out">Outside the course period</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Date enrolled</div>
+        <div class="form-group row">
+            <label for="enrollafterdate" class="col-sm-4 col-form-label">After</label>
+            <div class="col-sm-8">
+                <input type="date" class="form-control" id="enrollafterdate" name="enrollafterdate">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label for="enrollbeforedate" class="col-sm-4 col-form-label">Before</label>
+            <div class="col-sm-8">
+                <input type="date" class="form-control" id="enrollbeforedate" name="enrollbeforedate">
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Student</div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="payfilter">Pay Status</label>
+            <div class="col-sm-8">
+                <select id="payfilter" name="paystatus" class="custom-select my-1 mr-sm-2">
+                    <option selected value="all">All Students</option>
+                    <option value="paying">Paying Students</option>
+                    <option value="nonpaying">Non-paying Students</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="genderfilter">Gender</label>
+            <div class="col-sm-8">
+                <select id="genderfilter" name="gender" class="custom-select my-1 mr-sm-2">
+                    <option selected value="all">All Students</option>
+                    <option value="male">Male Only</option>
+                    <option value="female">Female Only</option>
+                    <option value="unknown">Unknown Only</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="certificateFilter">Certificate</label>
+            <div class="col-sm-8">
+                <select id="certificateFilter" name="certificateStatus" class="custom-select my-1 mr-sm-2">
+                    <option selected value="all">All Students</option>
+                    <option value="yes">Certificate Student</option>
+                    <option value="no">Non-certificate Student</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Age</div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="minage">From</label>
+            <div class="col-sm-8">
+                <input id="minage" type="number" name="minage" min=4 max=104 style='width: 5ch;'>
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="maxage">To</label>
+            <div class="col-sm-8">
+                <input id="maxage" type="number" name="maxage" min=4 max=104 style='width: 5ch;'>
+            </div>
+        </div>
+
+        <input id="showunknownage" type="checkbox" name="showunknownage" checked>
+        <label for="showunknownage">Unknown Age</label>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title">Education Level</div>
+        <div class="form-group">
+            <select class="form-control" multiple size=5 id="educationfilter" name="education">
+                <option value="p">Doctorate</option>
+                <option value="m">Master Degree</option>
+                <option value="b">Bachelor Degree</option>
+                <option value="a">Associate degree</option>
+                <option value="hs">High School</option>
+                <option value="jhs">Middle School</option>
+                <option value="el">Primary School</option>
+                <option value="other">Other</option>
+                <option value="none">None</option>
+                <option value="unknown">Unknown</option>
+            </select>
+        </div>
+    </div>
+    <hr>
+    <div class="field">
+        <div class="title"> Custome Filter</div>
+        <div class="form-group row">
+            <label class="col-sm-4 col-form-label" for="customfilter">CustomFilter</label>
+            <div class="col-sm-8">
+                <select id="customfilter" name="customfilter" class="custom-select my-1 mr-sm-2">
+                    <option selected value="all">All students</option>
+                    <option value="in">Students In Set</option>
+                    <option value="out">Students Not In Set</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="barbutton">
+        <button id="filterbutton" class="btn btn-outline-dark btn-sm">Filter</button>
+        <button id="resetbutton" class="btn btn-outline-dark btn-sm">Reset</button>
+    </div>
+    <br><br>
+</div>
+<div id=maincontent>
+
+    <h1 id=chart-title></h1>
+    <div class="nobreak">
+        <label for="minLinkSizeInput">Min. Link Size Shown: </label>
+        <input id="minLinkSizeInput" type="number" name="minLinkSize" min=1 max=100 value=25 required>
+        <label for="Leave-link"> Leave-link Opacity: </label>
+        <input id="Leave-link" type="range" name="leaveLinkOpacity" min=0 max=1 step=.1 value=.2>
+        <label for="diagramwidth">Diagram Width:</label>
+        <input id="diagramwidth" type="range" name="diagramwidth" min=100 max=10000 step=500 value=3000>
+    </div>
+    <svg id=key width=700 height=90>
+        <text dy=1em dx=250 text-anchor=middle>legend</text>
+        <g transform=translate(0,30)>
+            <g class=keylink transform=translate(20,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Viewed next step</text>
+            </g>
+            <g class='keylink backward' transform=translate(20,30)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Viewed previous step</text>
+            </g>
+            <g class='keylink jump' transform=translate(250,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Jumped ahead</text>
+            </g>
+            <g class='keylink backward jump' transform=translate(250,30)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Jumped back</text>
+            </g>
+            <g class='keylink leave' transform=translate(460,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Didn't view any more steps</text>
+            </g>
+        </g>
+    </svg>
+
+    <svg id=stats width=400 height=90 display=none><!--don't display initially-->
+        <text dx=150px dy=1em text-anchor=middle>Stats</text>
+        <text dx=20px dy=3em>Total number of links</text>
+        <text dx=230px dy=3em id=numlinks class=output></text>
+        <text dx=20px dy=4em>Chi Squared tests run</text>
+        <text dx=230px dy=4em id=testsrun class=output></text>
+        <text dx=20px dy=5em>Significant results at</text>
+        <text dx=200px dy=5em id=significance class=output></text>
+        <text dx=300px dy=5em id=significantresults class=output></text>
+    </svg>
+
+    <svg id=chart>
+        <defs>
+            <linearGradient id=grad1>
+                <stop offset="0%" style="stop-opacity:1"/>
+                <stop offset=100% style="stop-opacity:0"/>
+            </linearGradient>
+            <linearGradient id=grad2>
+                <!--only 1 stop, but use a gradient anyway to keep it consistent-->
+                <stop offset=0%/>
+            </linearGradient>
+            <linearGradient id=grad3>
+                <stop offset="0%" style="stop-opacity:0"/>
+                <stop offset=100% style="stop-opacity:1"/>
+            </linearGradient>
+        </defs>
+    </svg>
+</div>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/sankey-w-loops.js"></script>
+<script>
+
+    var margin = {top: 50, right: 100, bottom: 100, left: 20};
+    var width = 4000;
+    var height = 1400 - margin.top - margin.bottom;
+
+    // this is to build a svg canvas
+    var svg = d3.select('#chart')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+    var formatAsPercent4dp = d3.format('.4%'); // let javascript display numbers the day expected
+    var formatAsFloat4dp = d3.format('.4f');
+    var defaultMode = document.querySelector('input[name="mode"][checked]').value;
+    var linkUnit = defaultMode == "countTraversals" ? "times" : (defaultMode == "countStudents" ? "students" : "");
+
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+    var inputData = null; //last data received from server
+
+    //initialize opacity on leave links
+    document.querySelector('#grad2 stop').setAttribute('stop-opacity',
+        document.getElementById('Leave-link').defaultValue);
+
+    document.getElementById('chart-title').textContent = localStorage.getItem("courseName");
+
+    var defaultFilters = {graphtype: 'VDSankey', mode: document.querySelector('input[name=mode][checked]').value};
+    var filters = Object.assign({}, defaultFilters);
+
+
+    if (localStorage.getItem("hasCluster") != 0) {
+
+        let clusterField = document.getElementById("clusteringField");
+        let clusterNum = localStorage.getItem("hasCluster");
+        let clusterIndex = localStorage.getItem("clusterIndex");
+        for (let i = 0; i < clusterNum; i++) {
+            let clusterDiv = document.createElement("div");
+            clusterDiv.className = "form-check";
+
+            let clusterOption = document.createElement("input");
+            clusterOption.onchange = updateClustering;
+            clusterOption.className = "form-check-input";
+            let clusterLabel = document.createElement("label");
+            clusterLabel.className = "form-check-label";
+            clusterOption.type = "radio";
+            clusterLabel.innerText = "Cluster " + i;
+
+            clusterOption.name = "clusteringFilter";
+
+            clusterOption.value = i;
+            clusterDiv.appendChild(clusterOption);
+            clusterDiv.appendChild(clusterLabel);
+
+            clusterField.appendChild(clusterDiv);
+            if (clusterIndex == i) {
+                clusterOption.checked = true;
+                filters.clustering = i;
+            }
+        }
+
+        let clusteringBtn = document.getElementById("clusteringBtn");
+        clusteringBtn.addEventListener("click", () => {
+            window.location.href = "clustering.html";
+        })
+
+
+    }
+    // this is to set the layout of the sankey diagram
+    var sankey = d3.sankey()
+        .nodeWidth(10) // means the node width
+        .nodePadding(150); // means the vertical distance of  two rectangle
+
+    var path = sankey.link();
+
+    d3.json('/')
+        .header('content-type', 'application/json')
+        .post(JSON.stringify(filters), function (error, data) {
+            if (error) throw error;
+            drawSankey(data);
+        })
+
+
+    var drawSankey = function (data) {
+        inputData = data;
+        var minLinkSize = document.getElementById("minLinkSizeInput");
+
+        minLinkSize = minLinkSize.validity.valid ? parseInt(minLinkSize.value, 10) : 25;
+
+        sankey.nodes(data.nodes)
+            .links(data.links)
+            .size([width, height])
+            .layout(minLinkSize);
+
+
+        var links = svg.append('g').selectAll('.link')
+            .data(sankey.links())
+            .enter().append('g')
+            .attr('class', 'link')
+            .attr('d', path)
+            .classed('backward', d => d.target.x < d.source.x)
+            //TODO: do the +10px threshold a different way?
+            .classed('jump', d => Math.abs(d.target.x - d.source.x) > sankey.nodePitchX() + 10)
+            .classed('leave', d => d.target === sankey.nodes()[sankey.nodes().length - 1])
+            .sort((a, b) => b.dy - a.dy)
+            .on('dblclick', function (d) {
+                filters.link = {
+                    source: sankey.nodes().indexOf(d.source),
+                    target: sankey.nodes().indexOf(d.target)
+                };
+                d3.json('/')
+                    .header('content-type', 'application/json')
+                    .post(JSON.stringify(filters), function (error, data) {
+                        if (error) throw error;
+                        svg.selectAll('*').remove();
+                        drawSankey(data);
+                    });
+            });
+
+
+        //for each link to last node, append 3 paths
+        d3.selectAll('.link.leave').each(function (d) {
+            var thisLink = d3.select(this);
+            var pathStrings = path(d);  //should return array of 3 strings
+            thisLink.append('path')
+                .attr('d', pathStrings[0])
+                //no data attached to path elements, so .link data is used instead?
+                .style('stroke-width', d => Math.max(1, d.dy));
+
+            thisLink.append('path')
+                .attr('d', pathStrings[1])
+                .style('stroke-width', d => Math.max(1, d.dy));
+
+            thisLink.append('path')
+                .attr('d', pathStrings[2])
+                .style('stroke-width', d => Math.max(1, d.dy - 1));//-1 to make links entering last node distinguishable
+        });
+
+
+        //for all other links, append one path
+        d3.selectAll('.link:not(.leave)').append('path')
+            .attr('d', d => path(d))  //path(d) should return a string
+            .style('stroke-width', d => Math.max(1, d.dy));
+
+        links.append('title')
+            .text(function (d) {
+                if (d.pValue != null) { //if a chi squared test was run on this link
+                    if (filters.mode === 'countTraversals') {
+                        return d.source.name + ' \u2192 ' + d.target.name + '\n' + d.value + ' ' + linkUnit
+                            + '\n(Double-click to filter for students who traversed this link.)'
+                            + '\npValue = ' + formatAsPercent4dp(d.pValue)
+                            + '\nexpected in set = ' + formatAsFloat4dp(d.expectedInSet)
+                            + '\nexpected out of set = ' + formatAsFloat4dp(d.expectedOutOfSet)
+                            + '\nobserved in set = ' + d.observedInSet
+                            + '\nobserved out of set = ' + d.observedOutOfSet
+                            + '\nStudents in the set produce ' + (d.observedInSet > d.expectedInSet ? 'MORE' : 'LESS')
+                            + ' traversals than expected.';
+                    }
+                    else if (filters.mode === 'countStudents') {
+                        return d.source.name + ' \u2192 ' + d.target.name + '\n' + d.value + ' ' + linkUnit
+                            + '\n(Double-click to filter for students who traversed this link.)'
+                            + '\npValue = ' + formatAsPercent4dp(d.pValue)
+                            + '\n\u03c6 = ' + formatAsFloat4dp(d.phi)
+                            + '\nin set and on link = ' + d.inSetAndOnLink
+                            + '\nin set and off link = ' + d.inSetAndOffLink
+                            + '\nout of set and on link = ' + d.outOfSetAndOnLink
+                            + '\nout of set and off link = ' + d.outOfSetAndOffLink
+                            + '\nStudents in the set are '
+                            + (d.inSetAndOnLink / d.inSetAndOffLink > d.outOfSetAndOnLink / d.outOfSetAndOffLink ? 'MORE' : 'LESS')
+                            + ' likely to be on this link.';
+                    }
+                }
+                else { //if no chi squared test was run on this link
+                    return d.source.name + ' \u2192 ' + d.target.name + '\n' + d.value + ' ' + linkUnit
+                        + '\npValue not calculated. Expected frequencies too low.'
+                        + '\n(Double-click to filter for students who traversed this link.)';
+                }
+            });
+
+        var movingLinks = null; //temp variable for selection of links being dragged with node
+
+        var nodes = svg.append('g').selectAll('.node')
+            .data(sankey.nodes()) //array of nodes with small links filtered out
+            .enter().append('g')
+            .attr('class', 'node')
+            .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
+            .on('dblclick', function (d, i) {
+                filters.node = i;
+                d3.json('/')
+                    .header('content-type', 'application/json')
+                    .post(JSON.stringify(filters), function (error, data) {
+                        if (error) throw error;
+                        svg.selectAll('*').remove();
+                        drawSankey(data);
+                    });
+            })
+            .call(d3.drag()
+                .on('start', function (dMovingNode) {
+                    //dim all links not connected to node being dragged
+                    d3.selectAll('.link')
+                        .classed('dimmed', dLink => dLink.source != dMovingNode && dLink.target != dMovingNode);
+
+                    var touchingNodesData = new Set();  //set of data of nodes touching moving links
+                    //select the moving links and add data of all nodes touching them to set
+                    movingLinks = d3.selectAll('.link:not(.dimmed)')
+                        .each(function (dLink) {
+                            touchingNodesData.add(dLink.source);
+                            touchingNodesData.add(dLink.target);
+                        });
+                    //dim all nodes which are not touching the moving links
+                    d3.selectAll('.node')
+                        .classed('dimmed', dNode => !touchingNodesData.has(dNode));
+                })
+                .on('drag', function (d) {
+                    d3.select(this).attr('transform', 'translate(' + (d.x = d3.event.x) + ',' + (d.y = d3.event.y) + ')');
+
+                    movingLinks.each(function (d) {
+                        var r = path(d);
+                        if (r instanceof Array) {
+                            d3.select(this).selectAll('path')
+                                .attr('d', (d, i) => r[i]);
+                        }
+                        else {
+                            d3.select(this).select('path')
+                                .attr('d', r);
+                        }
+                    });
+                })
+                .on('end', function () {
+                    //un-dim all links and nodes
+                    d3.selectAll('.link, .node')
+                        .classed('dimmed', false);
+
+                    sankey.relayout();
+                    links.each(function (d) {
+                        var thisLink = d3.select(this);
+                        var paths = path(d);  //returns a path string OR array of 3 path strings
+
+                        if (paths instanceof Array) {
+                            thisLink.select('path:nth-of-type(1)')
+                                .attr('d', paths[0]);
+                            thisLink.select('path:nth-of-type(2)')
+                                .attr('d', paths[1]);
+                            thisLink.select('path:nth-of-type(3)')
+                                .attr('d', paths[2]);
+                        }
+                        else {
+                            thisLink.select('path')
+                                .attr('d', paths);
+                        }
+                    });
+                })
+            );
+
+        var nonZeroNodes = nodes.filter(d => d.value > 0);
+
+
+        //append 1 rect to node if trueValue is not present, else, append 2 rects
+        nonZeroNodes.each(function (d) {
+            var thisNode = d3.select(this);
+
+            if (d.trueValue === undefined) {
+                thisNode.append('rect')
+                    .attr('height', d => d.dy)
+                    .attr('width', sankey.nodeWidth())
+                    .style('fill', d => d.color = color(d.name.replace(/ .*/, '')))
+                    .style('stroke', d => d3.rgb(d.color).darker(2))
+                    .classed("discussionNode", d => d.isDiscussion != undefined && d.isDiscussion == 1)
+                    .append('title')
+                    .text(function (d) {
+                        if (d.post != undefined && d.comment != undefined) {
+                            return d.name + '\n' + d.value + ' ' + linkUnit
+                                + '\n' + 'Number of Post: ' + d.post
+                                + '\n' + 'Number of Comment: ' + d.comment
+                                + '\n' + 'Number of PostVote: ' + d.postVote
+                                + '\n' + 'Number of Response: ' + d.response
+                                + '\n' + 'Number of ResponseVote: ' + d.responseVote
+                                + '\n(Double-click to filter for students who passed this node.)' + '\n' + d.v1;
+                        } else {
+
+                            return d.name + '\n' + d.value + ' ' + linkUnit
+                                + '\n(Double-click to filter for students who passed this node.)' + '\n' + d.v1;
+                        }
+                    });
+            }
+            else {
+                thisNode.append('rect')//bigger rect
+                    .attr('height', d => d.dy)
+                    .attr('width', sankey.nodeWidth())
+                    .style('fill', function (d) {
+                        d.lightColor = color(d.name.replace(/ .*/, ''))
+                        d.lightColor_ = d3.hsl(d.lightColor);
+                        d.lightColor_.s -= 0.4 * d.lightColor_.s;
+                        d.lightColor_.l += 0.7 * (1 - d.lightColor_.l);
+                        return d.lightColor_;
+                    })
+                    .style('stroke', d => d3.rgb(d.lightColor_).darker(1));
+
+                thisNode.append('rect')//smaller rect
+                    .attr('height', d => d.trueDy)
+                    .attr('width', sankey.nodeWidth())
+                    .style('fill', d => d.color = color(d.name.replace(/ .*/, '')))
+                    .style('stroke', d => d3.rgb(d.color).darker(3))
+                    .append('title')
+                    .text(function (d) {
+                        return d.name + '\n' + d.trueValue + ' ' + linkUnit
+                            + '\n(Double-click to filter for students who passed this node.)';
+                    });
+            }
+        });
+
+
+        nonZeroNodes.append('text')
+            .attr('dy', '-0.5em')
+            .attr('transform', 'rotate(-90)')
+            .attr('text-anchor', 'end')
+            .text(d => d.name)
+            .classed("discussion", d => d.isDiscussion != undefined && d.isDiscussion == 1)
+        ;
+
+
+        updatePValueHighlighting();
+
+        printOverallStats();
+    };
+
+    document.getElementById("minLinkSizeInput").oninput = function (e) {
+        if (e.target.validity.valid) {
+            svg.selectAll('*').remove();
+            drawSankey(inputData)
+        }
+    };
+
+    document.getElementById("diagramwidth").oninput = function (e) {
+        width = document.getElementById("diagramwidth").value - margin.left - margin.right;
+
+        svg.selectAll("*").remove();
+        d3.select("#chart")
+            .attr("width", width + margin.left + margin.right);
+
+        drawSankey(inputData);
+    };
+
+    document.getElementById("Leave-link").oninput = function (e) {
+        document.querySelector("#grad2 stop").setAttribute("stop-opacity", e.target.value);
+    };
+
+    function updatePValueHighlighting() {
+        if (document.getElementById("highlightlowpvalues").checked) {
+            d3.selectAll('.link')
+                .classed('dimmed2', function (d) {
+                    return d.pValue === undefined || d.pValue > document.getElementById('pValueThreshold').value / 100;
+                })
+        } else {
+            //undim all links
+            d3.selectAll('.link')
+                .classed('dimmed2', false);
+        }
+    }
+
+    document.getElementById('highlightlowpvalues').onchange = updatePValueHighlighting;
+    document.getElementById('pValueThreshold').addEventListener('input', updatePValueHighlighting);
+
+
+    function printOverallStats() {
+        //only start displaying stats box if at least one filter has been used
+        //if already displayed, just continue
+        if (document.getElementById('stats').hasAttribute('display')) {
+            //iterate through names of properties in filters object
+            for (var prop in filters) {
+                //if filters object has a property other than the two in it by default
+                if (prop != 'graphtype' && prop != 'mode')
+                    document.getElementById('stats').removeAttribute('display');//display the stats box
+            }
+        }
+
+        var numTestsRun = 0;
+        var numSigResults = 0;
+        var pValueThreshold = document.getElementById('pValueThreshold').value;
+        for (link of inputData.links) {
+            if (link.pValue !== undefined) {
+                numTestsRun++;
+                if (link.pValue * 100 < pValueThreshold)
+                    numSigResults++;
+            }
+        }
+
+        d3.select('#numlinks').text(inputData.links.length);
+        d3.select('#testsrun').text(numTestsRun);
+        d3.select('#significance').text(d3.format('.2')(pValueThreshold) + '%');
+        d3.select('#significantresults').text(numSigResults);
+    }
+
+    document.getElementById('pValueThreshold').addEventListener('input', printOverallStats);
+
+
+    function updateMode(e) {
+        filters.mode = e.target.value;
+        switch (e.target.value) {
+            case "countTraversals":
+                linkUnit = "times";
+                break;
+            case "countStudents":
+                linkUnit = "students";
+                break;
+        }
+
+        d3.json('/')
+            .header('content-type', 'application/json')
+            .post(JSON.stringify(filters), function (error, data) {
+                if (error) throw error;
+                svg.selectAll('*').remove();
+                drawSankey(data);
+            });
+    }
+
+
+    function updateClustering(e) {
+        filters.clustering = e.target.value;
+        if (filters.clustering === 'all')
+            delete filters.clustering;
+
+        d3.json('/')
+            .header('content-type', 'application/json')
+            .post(JSON.stringify(filters), function (error, data) {
+                if (error) throw error;
+                svg.selectAll('*').remove();
+                drawSankey(data);
+            });
+    }
+
+    document.getElementById("allClustering").onchange = updateClustering;
+    document.getElementById('countTraversals').onchange = updateMode;
+    document.getElementById('countStudents').onchange = updateMode;
+
+
+    document.getElementById('filterbutton').onclick = function (e) {
+
+        filters.pay = document.getElementById('payfilter').value;
+        if (filters.pay === 'all')
+            delete filters.pay;
+
+        filters.certificate = document.getElementById('certificateFilter').value;
+        if (filters.certificate === 'all')
+            delete filters.certificate;
+
+        filters.time = {
+            from: document.getElementById('fromdate').value,
+            to: document.getElementById('todate').value
+        };
+        if (filters.time.from == '' && filters.time.to == '')
+            delete filters.time;
+
+        filters.period = document.getElementById('period').value
+
+        if (filters.period === 'all')
+            delete filters.period
+
+
+        filters.enrolled = {
+            from: document.getElementById('enrollafterdate').value,
+            to: document.getElementById('enrollbeforedate').value
+        };
+        if (filters.enrolled.from == '' && filters.enrolled.to == '')
+            delete filters.enrolled;
+
+        filters.gender = document.getElementById('genderfilter').value;
+        if (filters.gender === 'all')
+            delete filters.gender;
+
+        filters.age = {
+            min: document.getElementById('minage').value,
+            max: document.getElementById('maxage').value,
+            showunknown: document.getElementById('showunknownage').checked
+        };
+        if (filters.age.min == '' && filters.age.max == '' && filters.age.showunknown)
+            delete filters.age;
+
+        //from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/arguments
+        filters.education = [].slice
+            .call(document.getElementById('educationfilter').selectedOptions)
+            .map(option => option.value);
+        if (filters.education.length == 0)
+            delete filters.education;
+
+        filters.custom = document.getElementById('customfilter').value;
+        if (filters.custom === 'all')
+            delete filters.custom;
+        //
+        // filters.clustering = document.getElementsByName("clusteringFilter").value;
+        //
+        // const clusteringRadios = document.getElementsByName("clusteringFilter");
+        // console.log(clusteringRadios)
+        // for (let i = 0; i < clusteringRadios.length; i++) {
+        //     if (clusteringRadios[i].checked) filters.clustering = clusteringRadios[i].value;
+        // }
+        // if (filters.clustering === 'all')
+        //     delete filters.clustering;
+
+        d3.json('/')
+            .header('content-type', 'application/json')
+            .post(JSON.stringify(filters), function (error, data) {
+                if (error) throw error;
+                svg.selectAll('*').remove();
+                drawSankey(data);
+            });
+    };
+
+
+    document.getElementById('resetbutton').onclick = function (e) {
+        //reset filters
+        filters = Object.assign({}, defaultFilters);
+
+        //reset all widgets
+        // reset all input elements
+        for (var input of document.querySelectorAll('input')) {
+            if (input.type === 'checkbox' || input.type === 'radio')
+                input.checked = input.defaultChecked;
+            else if (input.type !== null)
+                input.value = input.defaultValue;
+        }
+
+        // reset all select elements
+        for (var option of document.querySelectorAll('option'))
+            option.selected = option.defaultSelected;
+
+        //change opacity back to default
+        document.querySelector('#grad2 stop').setAttribute('stop-opacity',
+            document.getElementById('leaveLinkOpacity').defaultValue);
+
+        //send http request and redraw sankey
+        d3.json('/')
+            .header('content-type', 'application/json')
+            .post(JSON.stringify(filters), function (error, data) {
+                if (error) throw error;
+                svg.selectAll('*').remove();
+                drawSankey(data);
+            });
+    };
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!-- see https://bl.ocks.org/mbostock/3883195 (area chart) -->
+<!--from  https://bl.ocks.org/mbostock/3883195-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+<title>Active Times</title>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="index.css">
+<style>
+#wholechart{position: relative; width: 960px; height: 500px;}
+#area{fill: steelblue; opacity: 0.7;}
+#gridlines-v line, #gridlines-h line{stroke: black; stroke-opacity: 0.2;}
+</style>
+</head>
+<body>
+<div id=wholechart></div>
+<script src='lib/d3.v4.min.js'></script>
+<script>
+//setup margins
+var margin = {top: 20, right: 20, bottom: 120, left: 50};
+
+var computedStyle = window.getComputedStyle(document.getElementById('wholechart'));
+var wholechartHeight = parseInt(computedStyle.height.slice(0,-2), 10);
+var wholechartWidth = parseInt(computedStyle.width.slice(0,-2), 10);
+
+//plot area width and height
+var width = 6000;
+var height = wholechartHeight - 30 - margin.top - margin.bottom;  //-30 to allow for scrollbar
+
+//setup divs and svgs for left-axis section and rest of chart
+d3.select('#wholechart').append('svg')  //left axis
+    .attr('id', 'left-axis')
+    .attr('width', margin.left)
+    .attr('height', wholechartHeight - 30)  //-30 to fit above scrollbar
+    .attr('style', 'position: absolute; left: 0; top: 0;');
+
+d3.select('#wholechart').append('div')  //chart-wrapping div
+    .attr('style','position: absolute; top: 0; overflow-x: scroll; '
+    +'left: '+margin.left+'px; height: '+wholechartHeight+'px; width: '+(wholechartWidth-margin.left)+'px;')
+  .append('svg')
+    .attr('id', 'chart')
+    .attr('width', width)
+    .attr('height', wholechartHeight - 30)  //-30 to allow for scrollbar
+
+var chart = d3.select('#chart').append('g')
+  .attr('transform', 'translate(0,' + margin.top + ')');
+
+//scales, range setup
+var x = d3.scaleUtc().range([0, width]);  //rangeRound breaks when domain size exceeds range (in pixels)
+var y = d3.scaleLinear().rangeRound([height, 0]);
+
+update(); //TODO: don't really need while it's only being drawn once
+
+
+function update(){
+  d3.csv('/')
+      .header('content-type','application/json')
+      .row(rcf)
+      .post(JSON.stringify({graphtype:'activetime'}), function(error, data){
+        if(error) throw error;
+        d3.select('#left-axis').selectAll('*').remove();
+        chart.selectAll('*').remove();
+        drawArea(data);
+      });
+}
+
+
+//row conversion function
+function rcf(d, i, colNames){
+  //coerce 2nd column to numbers
+  d[colNames[1]] = +d[colNames[1]];
+  //convert 1st column to Date objects
+  var fields = JSON.parse(d[colNames[0]]);
+  d[colNames[0]] = new Date(Date.UTC(fields[0], fields[1], fields[2], fields[3], fields[4]));
+  return d;
+}
+
+
+function drawArea(data){
+  var col0=data.columns[0];
+  var col1=data.columns[1];
+
+  //area generator
+  var area = d3.area()
+      .x(d => x(d[col0]))  //x data accessor / x baseline generator
+      .y0(y(0))  //y baseline generator
+      .y1(d => y(d[col1])) //y data accessor
+
+  //scales, domain setup
+  x.domain([d3.min(data, d => d[col0]), d3.max(data, d => d[col0])]);
+  y.domain([0, d3.max(data, d => d[col1])]).nice();
+
+  //draw axes
+  chart.append('g')
+      .attr('id', 'axis-x')
+      .attr('transform', 'translate(0,' + height + ')')
+      .call(d3.axisBottom(x)
+                .ticks(d3.utcDay) //for some reason, passing both the interval and specifier string to .ticks() doesn't work
+                .tickFormat(d3.utcFormat('%a, %d %b')) )
+    .selectAll('text')  //select all tick labels
+      .attr('text-anchor', 'end')
+      .attr('transform', 'rotate(-90)')
+      .attr('dx', '-.8em')
+      .attr('dy', '-.5em');
+
+  d3.select('#left-axis').append('g')
+      .attr('id', 'axis-y')
+      .attr('transform','translate(' + (margin.left-1) + ',' + margin.top + ')')  //nudge -1 to get axis line inside
+      .call(d3.axisLeft(y));
+
+  //gridlines; 0.5px nudge makes lines sharper for some reason
+  chart.append('g')
+      .attr('id', 'gridlines-v')
+    .selectAll('line')
+      .data(x.ticks(d3.utcDay).map(date => x(date)))
+    .enter().append('line')
+      .attr('x1', d => d+0.5)
+      .attr('x2', d => d+0.5)
+      .attr('y1', height)
+      .attr('y2', 0);
+
+  chart.append('g')
+      .attr('id', 'gridlines-h')
+    .selectAll('line')
+      .data(y.ticks().map(num => y(num)))
+    .enter().append('line')
+      .attr('x1', 0)
+      .attr('x2', width)
+      .attr('y1', d => d+0.5)
+      .attr('y2', d => d+0.5);
+
+  //axis titles
+  chart.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', width/2)
+      .attr('y', height+margin.bottom-20)
+      .text(col0);
+
+  d3.select('#left-axis').append('text')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -height/2) //x and y given in rotated coordinate system
+      .attr('y', 20)
+      .text(col1);
+
+  //graph title
+  chart.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', width/2)
+      .attr('y', 20)
+      .text('Active Times');
+
+  //draw area
+  chart.append('path')
+      .datum(data)
+      .attr('id', 'area')
+      .attr('fill', 'steelblue')
+      .attr('d', area);
+}
+
+</script>
+
+</body>
+</html>

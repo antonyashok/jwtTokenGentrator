@@ -1,0 +1,803 @@
+<!-- derived from https://bl.ocks.org/mbostock/1005090 -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>Marimekko Chart</title>
+    <script src="lib/bootstrap/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css">
+    <link href=marimekko.css rel=stylesheet type=text/css>
+</head>
+<body>
+
+<div id=filterbar>
+    <div class="form-group row">
+        <label class="col-sm-9 col-form-label" for="outer">
+            <h4>y<span> by </span>x</h4></label>
+        <div class="col-sm-1">
+            <button id=swap type=button class="btn btn-outline-dark btn-sm">Swap</button>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label class="col-sm-6 col-form-label" for="outer">Outer Variable</label>
+        <div class="col-sm-6">
+            <select class="custom-select my-1 mr-sm-2" id=outer name=outer>
+                <option value=gender>Gender</option>
+                <option selected value=age>Age</option>
+                <option value=education>Education</option>
+                <option value=paying>Paid</option>
+                <option value=enrolldate>Enrollment Time</option>
+                <option value=higheststep>Highest Step Seen</option>
+                <option value=highestchapter>Highest Chapter Seen</option>
+                <option value=numberofsteps>Number of Steps Seen</option>
+                <option value=country>Country</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label class="col-sm-6 col-form-label" for=inner>Inner Variable</label>
+        <div class="col-sm-6">
+            <select class="custom-select my-1 mr-sm-2" id=inner name=inner>
+                <option value=gender>Gender</option>
+                <option value=age>Age</option>
+                <option selected value=education>Education</option>
+                <option value=paying>Paid</option>
+                <option value=enrolldate>Enrollment Time</option>
+                <option value=higheststep>Highest Step Seen</option>
+                <option value=highestchapter>Highest Chapter Seen</option>
+                <option value=numberofsteps>Number of Steps Seen</option>
+                <option value=country>Country</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label class="col-sm-10 col-form-label" for=highlightLowPValues>Highlight Significant Results At: </label>
+    </div>
+    <div  class="form-group row" id="percentage">
+        <div class="col-sm-7"></div>
+        <div class="col-sm-5">
+            <input id=pValueThreshold type=number name=pValueThreshold min=0 max=100 step=.1 value=2 style='width: 6ch;'>%
+            <input id=highlightlowpvalues type=checkbox name=highlightlowpvalues value=highlightlowpvalues>
+            <span title='Dimmed = insufficient expected value to calculate p-value.
+            Almost transparent = p-value over threshold.' style='font-weight: bold; cursor: pointer'>?</span>
+        </div>
+    </div>
+
+    <div class="form-group row">
+    <label  class="col-sm-5 col-form-label" for=reverseX>Reverse X</label>
+    <input class="col-sm-2 form-control"id=reverseX type=checkbox>
+    </div>
+    <div class="form-group row">
+    <label  class="col-sm-5 col-form-label" for=reverseY>Reverse Y</label>
+    <input class="col-sm-2 form-control" id=reverseY type=checkbox checked>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-12">
+    <button id=enterFilterModeButton type=button  class="btn btn-outline-dark btn-sm">Enter Filter Mode</button>
+    <button id=applyFilterButton type=button hidden  class="btn btn-outline-dark btn-sm">Apply Filter</button>
+        </div>
+    </div>
+</div>
+
+
+<div id=main>
+
+    <div id=chartcell>
+        <svg id=chart width=960 height=700></svg>
+    </div>
+    <div id=legendcell>
+        <div id=legend></div>
+        <div id=stats>
+            <h2>Stats</h2>
+            <div>Total number of rectangles: <span id=numRects></span></div>
+            <div>Chi-squared tests run: <span id=testsRun></span></div>
+            <div>Significant results at <span id=significance></span> : <span id=significantResults></span></div>
+        </div>
+    </div>
+</div>
+
+<script src='lib/d3.v4.min.js'></script>
+<script>
+    //margin setup
+    var margin = {top: 30, right: 30, bottom: 200, left: 50};
+    var svg = d3.select('#chart');
+    var width = svg.attr('width') - margin.left - margin.right;
+    var height = svg.attr('height') - margin.top - margin.bottom;
+    svg = svg.append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+    //scales and axes setup
+    //x scale
+    var x = d3.scaleLinear()
+        .range([0, width]);
+    var xAxis = d3.axisBottom(x)
+        .ticks(10)
+        .tickFormat(d3.format('.0%'));
+    svg.append('g')
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xAxis);
+
+    //y scale
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+    var yAxis = d3.axisLeft(y)
+        .ticks(10)
+        .tickFormat(d3.format('.0%'));
+    svg.append('g')
+        .call(yAxis);
+
+    //color scales
+    var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+    //darkColor isn't actually a scale, but it will take a value in color's domain
+    //and return a darker version of what color would have returned.
+    //This saves having to reassign darkColor's domain every time color's domain gets reassigned.
+    function darkColor(value) {
+        var hslColor = d3.hsl(color(value));
+        hslColor.l *= 0.1;  //darken 90%
+        return hslColor.toString();
+    }
+
+
+    //object to send to server; contains short names of variables to group students by,
+    //and names of groups to omit from rows or columns
+    var filters = {
+        graphtype: 'marimekko',
+        vars: [document.getElementById('outer').value, document.getElementById('inner').value],
+        omitColumns: {}, omitRows: {}
+    };
+
+
+    d3.json('/')  //request JSONArray of questions (strings with full question text) from server
+        .header('content-type', 'application/json')
+        .post(JSON.stringify({data: 'surveyQuestions'}), function (error, data) {
+            if (error) throw error;
+
+            //add questions to both select lists
+            d3.selectAll('#outer, #inner').selectAll('.survey-question')
+                .data(data)
+                .enter().append('option')
+                .attr('class', 'survey-question')
+                .attr('value', d => d)
+                .text(d => d);
+        });
+
+    //global variables to store unfiltered chart data
+    var data = null;
+    var nestedData = null;
+    var innerKeys = null; //sorted array of inner keys (strings)
+
+    d3.csv('/')//initial request for Mekko chart data from server
+        .header('content-type', 'application/json')
+        .row(rcf)
+        .post(JSON.stringify(filters), function (error, newData) {
+            if (error) throw error;
+            data = newData;
+            nestedData = nestData(data);
+            innerKeys = getInnerKeys(nestedData);
+
+            color.domain(innerKeys);
+
+            drawMarimekko(nestedData);
+            drawLegend(innerKeys);
+            printOverallStats();
+        });
+
+
+    function rcf(d, i, colNames) {
+        //coerce value column to numbers
+        d.value = +d.value;
+        //if p-value is empty string, convert to null, else, coerce to number
+        d.pValue = (d.pValue == '' ? null : +d.pValue);
+        //coerce phi column to numbers
+        d.phi = +d.phi;
+        return d;
+    }
+
+
+    /*Given the short name of the variable to sort, returns a comparator for this variable.
+      If reverse is present and true, returns a reverse-order version of that comparator.*/
+    function getKeyComparator(name, reverse) {
+        if (reverse) {
+            switch (name) {
+                case 'education':
+                    return (a, b) => educationSorter(b, a);
+                case 'enrolldate':
+                    return (a, b) => enrolldateSorter(b, a);
+                case 'numberofsteps':
+                    return (a, b) => d3.descending(parseInt(a), parseInt(b));
+                default:
+                    return d3.descending;
+            }
+        }
+        else {
+            switch (name) {
+                case 'education':
+                    return educationSorter;
+                case 'enrolldate':
+                    return enrolldateSorter;
+                case 'numberofsteps':
+                    return (a, b) => d3.ascending(parseInt(a), parseInt(b));
+                default:
+                    return d3.ascending;
+            }
+        }
+    }
+
+
+    var eduOrder = ['Unknown', 'None', 'Other', 'Primary School', 'Junior High School', 'High School',
+        'Associate Degree', 'Bachelor Degree', 'Master Degree', 'Doctorate'];
+
+    function educationSorter(a, b) {
+        ia = eduOrder.indexOf(a);
+        ib = eduOrder.indexOf(b);
+        if (ia < ib) return -1;
+        else if (ib < ia) return 1;
+        else return 0;
+    }
+
+
+    function enrolldateSorter(a, b) {
+        na = +a.slice(0, a.indexOf(' '));
+        nb = +b.slice(0, b.indexOf(' '));
+
+        if (a.includes('early'))
+            na = -na;
+
+        if (b.includes('early'))
+            nb = -nb;
+
+        if (na < nb) return -1;
+        else if (nb < na) return 1;
+        else return 0;
+    }
+
+
+    /*Takes an array of unnested data and nests it by the two selected variables,
+      in the order indicated by the two 'reverse_' flags.*/
+    function nestData(data) {
+        //nest by outerVariable, then by innerVariable
+        var outerVariable = document.getElementById('outer').value;
+        var innerVariable = document.getElementById('inner').value;
+
+        var reverseX = document.getElementById('reverseX').checked;
+        var reverseY = document.getElementById('reverseY').checked;
+
+        var nestedData = d3.nest()
+            .key(d => d[outerVariable])
+            .sortKeys(getKeyComparator(outerVariable, reverseX))
+            .key(d => d[innerVariable])
+            .sortKeys(getKeyComparator(innerVariable, reverseY))
+            .entries(data);
+
+        return nestedData;
+    }
+
+
+    /**Take the nested data and return an array containing all of the inner keys, sorted in ascending order.*/
+    function getInnerKeys(nestedData) {
+        var innerKeySet = new Set();
+
+        for (var o of nestedData) {
+            for (var i of o.values)
+                innerKeySet.add(i.key);
+        }
+
+        //convert Set to Array; always sort Array in ascending order
+        var innerKeyArray = Array.from(innerKeySet)
+            .sort(getKeyComparator(document.getElementById('inner').value, false));
+
+        return innerKeyArray;
+    }
+
+
+    /*Take a set of nested data and draw the Mekko chart for it.
+      Includes: calculating offsets, drawing rectangles, drawing column labels,
+        drawing the x axis label, drawing column checkboxes, and setting the title.*/
+    function drawMarimekko(nestedData) {
+        /*Compute total sum, sums for each outer segment, horizontal offsets for outer
+        segments, and vertical offsets for inner segments.
+        v = accumulator
+        d = data object for each inner segment
+        os = data object for each outer segment*/
+        var totalSum = nestedData.reduce(function (v, os) {
+            os.offset = v;  //offset from left, in data units, not pixels
+            os.sum = os.values.reduceRight(function (v, d) {
+                d.parent = os;//need this pointer later
+                d.offset = v; //offset from top, in data units, not pixels
+                //values array should only have 1 element if each pair of keys in the original data only occurred once
+                //TODO: throw exception if d.values has more then 1 element?
+                return v + d.values[0].value;
+            }, 0);
+            return v + os.sum;
+        }, 0);
+
+        //Add a group for each outer segment.
+        var outerSegments = svg.selectAll('.outerSegment')
+            .data(nestedData)
+            .enter().append('g')
+            .attr('class', 'outerSegment')
+            .attr('transform', os => 'translate(' + x(os.offset / totalSum) + ')');
+
+        //Add a group and rect for each inner segment.
+        outerSegments.selectAll('.innerSegment')
+            .data(os => os.values)
+            .enter().append('g')
+            .attr('class', 'innerSegment')
+            .attr('transform', d => 'translate(0,' + (height - y(d.offset / d.parent.sum)) + ')')
+            .append('rect')
+            .attr('height', d => height - y(d.values[0].value / d.parent.sum))
+            .attr('width', d => x(d.parent.sum / totalSum))
+            .style('fill', d => color(d.key))
+            //double click a rectangle to send that inner variable's rectangles to the bottom
+            /*.on('dblclick', function(d){//TODO: fix
+              nestedData.forEach(column => {
+                var newValues = [];
+                column.values.forEach(element => {
+                  if(element.key==d.key)
+                    newValues.unshift(element); //add to start of new array
+                  else
+                    newValues.push(element);  //add to end of new array
+                })
+                column.values=newValues;
+              });
+
+              svg.selectAll('.outerSegment').remove();
+              d3.select('#legend').selectAll('*').remove();
+              drawMarimekko();
+            })*/
+            .append('title')
+            .text(function (d) {
+                return document.getElementById('outer').selectedOptions[0].text + ': ' + d.parent.key + '\n'
+                    + document.getElementById('inner').selectedOptions[0].text + ': ' + d.key + '\n'
+                    + d.values[0].value + ' students'
+                    + '\np-value: ' + (d.values[0].pValue != null ? d3.format('.2p')(d.values[0].pValue) : 'Not calculated. Expected frequencies too low.')
+                    + '\ncorrelation: ' + (d.values[0].phi > 0 ? 'POSITIVE' : 'NEGATIVE')
+                    + '\nphi coefficient: ' + d3.format('.4f')(d.values[0].phi)
+                    /*+ '\n(Double-click to send to bottom.)'*/;
+            });
+
+        //add a label for each column wider than 1% of the graph width
+        var minColWidth = totalSum * 0.01;
+        outerSegments.filter(os => os.sum > minColWidth)
+            .append('text')
+            .attr('text-anchor', 'end')
+            .attr('transform', 'rotate(-90)')
+            .attr('x', -height - 30)  //'-30' value depends on size of tick label text
+            .attr('y', os => x(os.sum / totalSum / 2))
+            .attr('dy', '0.5ch')
+            .text(os => os.key.length > 24 ? (os.key.slice(0, 22) + '...') : os.key)
+            .append('title')
+            .text(os => os.key + '\n' + os.sum + ' students\n' + d3.format('.1%')(os.sum / totalSum));
+
+        //add bottom axis title
+        svg.append('text')
+            .attr('class', 'axisTitle')
+            .attr('x', width / 2)
+            .attr('y', height + margin.bottom - 20)
+            .text(document.getElementById('outer').selectedOptions[0].text);
+
+        //add a checkbox for each column
+        d3.select('#chartcell').selectAll('input')
+            .data(nestedData) //data attached to checkbox = data attached to .outerSegment
+            .enter().append('input')
+            .attr('type', 'checkbox')
+            .attr('hidden', true)
+            .property('checked', os => !filters.omitColumns[os.key])
+            .style('position', 'absolute')
+            //nudge up 14px to avoid overlap with tick labels
+            .style('top', (margin.top + height - 14) + 'px')
+            //nudge left 8px to center checkbox in column; ideally would scale the nudge with the checkbox size
+            .style('left', os => (margin.left + x((os.offset + os.sum / 2) / totalSum) - 8 + 'px'))
+            //function to darken or undarken a column of rectangles AND update filters object
+            .on('change', function (os) {
+                if (this.checked == false) {  //checkbox was just cleared
+                    filters.omitColumns[os.key] = true; //update filters object
+
+                    //darken this column of rects
+                    d3.selectAll('.outerSegment').filter(os_ => os_.key == os.key).selectAll('rect')
+                        .classed('darkened', true)
+                        .style('fill', d => darkColor(d.key));
+                }
+                else { //checkbox was just checked
+                    delete filters.omitColumns[os.key];  //update filters object
+
+                    //set the normal color on any rects in this column and not also in a darkened row
+                    var undarkenedRowKeySet = new Set();
+                    d3.selectAll('.legendEntry>input:checked')  //select checked row checkboxes
+                        .each(innerKey => undarkenedRowKeySet.add(innerKey));//add the inner keys to a Set
+
+                    d3.selectAll('.outerSegment').filter(os_ => os_.key == os.key).selectAll('rect')  //select all rects in a column
+                        .filter(d => undarkenedRowKeySet.has(d.key))  //filter for rects not in darkened rows
+                        .classed('darkened', false)
+                        .style('fill', d => color(d.key));
+                }
+            });
+
+        //set chart title
+        document.querySelector('h4').firstChild.textContent = document.getElementById('inner').selectedOptions[0].text;
+        document.querySelector('h4').lastChild.textContent = document.getElementById('outer').selectedOptions[0].text;
+    }
+
+
+    /*Take array of inner keys, and draw the legend for it, including row checkboxes.*/
+    function drawLegend(innerKeys) {
+        //add legend heading
+        d3.select('#legend').append('h2')
+            .text(document.getElementById('inner').selectedOptions[0].text);
+
+        //conditionally reverse order of legend entries to match chart
+        if (!document.getElementById('reverseY').checked)
+            innerKeys = Array.from(innerKeys).reverse();
+
+        //need total sum of students for hover text
+        var totalSum = nestedData.reduce(function (v, os) {
+            return v + os.values.reduce(function (v, d) {
+                return v + d.values[0].value;
+            }, 0);
+        }, 0);
+
+        //add legend entries
+        var legendEntries = d3.select('#legend').selectAll('div')
+            .data(innerKeys)
+            .enter().append('div')
+            .attr('class', 'legendEntry')
+            .attr('title', function (key) {
+                var numStudents = 0;
+                for (var o of nestedData) {
+                    for (var i of o.values) {
+                        if (i.key == key)
+                            numStudents += i.values[0].value;
+                    }
+                }
+
+                return key + '\n' + numStudents + ' students\n' + d3.format('.1%')(numStudents / totalSum);
+            });
+
+        legendEntries.append('span')
+            .attr('class', 'colorBox')
+            .style('background', key => color(key));
+
+        legendEntries.append(key => document.createTextNode(key));
+
+        //add row checkboxes to legend entries
+        d3.selectAll('.legendEntry').insert('input', '*')
+            .attr('type', 'checkbox')
+            .attr('hidden', true)
+            //innerKey is the data joined to the .legendEntry - inherited by this input element
+            .property('checked', innerKey => !filters.omitRows[innerKey])
+            //function to darken or undarken a row of rectangles AND update filters object
+            .on('change', function (innerKey) {
+                if (this.checked == false) {  //checkbox was just cleared
+                    filters.omitRows[innerKey] = true;  //update filters object
+
+                    //crossout this legend entry
+                    d3.select(this.parentNode).classed('linethrough', true);
+
+                    //darken this row of rects
+                    d3.selectAll('.innerSegment rect').filter(d => d.key == innerKey)
+                        .classed('darkened', true)
+                        .style('fill', d => darkColor(d.key));
+                }
+                else { //checkbox was just checked
+                    delete filters.omitRows[innerKey];  //update filters object
+
+                    //un-crossout this legend entry
+                    d3.select(this.parentNode).classed('linethrough', false);
+
+                    //set normal color on any rects in this row and not also in a darkened column
+                    var undarkenedColumnKeySet = new Set();
+                    d3.selectAll('#chartcell>input:checked')  //select checked column checkboxes
+                        .each(os => undarkenedColumnKeySet.add(os.key));//add the column data to a Set
+
+                    d3.selectAll('.innerSegment rect').filter(d => d.key == innerKey) //select all rects in a row
+                        .filter(d => undarkenedColumnKeySet.has(d.parent.key))  //filter for rects not in darkened columns
+                        .classed('darkened', false)
+                        .style('fill', d => color(d.key));
+                }
+            });
+    }
+
+
+    document.getElementById('outer').addEventListener('change', update);
+    document.getElementById('inner').addEventListener('change', update);
+
+    /*When 1 select element is changed, get new Mekko data from server and redraw Mekko chart.*/
+    function update() {
+        filters.vars[0] = document.getElementById('outer').value;
+        filters.vars[1] = document.getElementById('inner').value;
+
+        for (var i in filters.omitColumns) //clear column filter
+            delete filters.omitColumns[i];
+        for (var i in filters.omitRows)  //clear row filter
+            delete filters.omitRows[i];
+
+        d3.csv('/')
+            .header('content-type', 'application/json')
+            .row(rcf)
+            .post(JSON.stringify(filters), function (error, newData) {
+                if (error) throw error;
+                //clear graphics
+                svg.selectAll('.outerSegment, .axisTitle').remove();
+                d3.select('#legend').selectAll('*').remove();
+                d3.selectAll('#chartcell>input[type=checkbox]').remove();
+                rowCheckboxesPresent = false;
+                colCheckboxesPresent = false;
+
+                //process data
+                data = newData;
+                nestedData = nestData(data);
+                innerKeys = getInnerKeys(nestedData);
+
+                color.domain(innerKeys);
+
+                //draw graphics
+                drawMarimekko(nestedData);
+                drawLegend(innerKeys);
+                updatePValueHighlighting();
+                printOverallStats();
+            });
+    }
+
+
+    document.getElementById('swap').addEventListener('click', swap);
+
+    function swap() {
+        //if Mekko variables are the same, swapping should do nothing
+        if (filters.vars[0] == filters.vars[1])
+            return;
+
+        //swap select element values
+        var temp = document.getElementById('outer').value;
+        document.getElementById('outer').value = document.getElementById('inner').value;
+        document.getElementById('inner').value = temp;
+
+        //swap fields in filters object
+        temp = filters.vars[0];
+        filters.vars[0] = filters.vars[1];
+        filters.vars[1] = temp;
+
+        for (var i in filters.omitColumns) //clear column filter
+            delete filters.omitColumns[i];
+        for (var i in filters.omitRows)  //clear row filter
+            delete filters.omitRows[i];
+
+        //clear graphics
+        svg.selectAll('.outerSegment, .axisTitle').remove();
+        d3.select('#legend').selectAll('*').remove();
+        d3.selectAll('#chartcell>input[type=checkbox]').remove();
+        rowCheckboxesPresent = false;  //TODO: try to keep filter config when swapping?
+        colCheckboxesPresent = false;
+
+        //swap columns in raw data
+        temp = data.columns[0];
+        data.columns[0] = data.columns[1];
+        data.columns[1] = temp;
+
+        //re-process data
+        nestedData = nestData(data);
+        innerKeys = getInnerKeys(nestedData);
+
+        color.domain(innerKeys);
+
+        //draw graphics
+        drawMarimekko(nestedData);
+        drawLegend(innerKeys);
+        updatePValueHighlighting();
+        printOverallStats();
+    }
+
+
+    document.getElementById('highlightlowpvalues').onchange = updatePValueHighlighting;
+    document.getElementById('pValueThreshold').addEventListener('input', updatePValueHighlighting);
+    document.getElementById('pValueThreshold').addEventListener('input', printOverallStats);
+
+    /*If box is checked, dim all rectangles without p values below the threshold; undim all others.
+      If box is unchecked, undim all rectangles. P values come from chi squared test.*/
+    function updatePValueHighlighting() {
+        if (document.getElementById('highlightlowpvalues').checked) {
+            //dim all rects with no p value or p value over the threshold; undim all other rects
+            d3.selectAll('.innerSegment rect')
+                .classed('dimmed1', function (d) {
+                    return d.values[0].pValue == null;
+                })
+                .classed('dimmed2', function (d) {
+                    return d.values[0].pValue != null && d.values[0].pValue > document.getElementById('pValueThreshold').value / 100;
+                });
+        }
+        else {
+            //undim all rects
+            d3.selectAll('.innerSegment rect')
+                .classed('dimmed1 dimmed2', false);
+        }
+    }
+
+
+    function printOverallStats() {
+        var numRects = 0;
+        var testsRun = 0;
+        var significance = +document.getElementById('pValueThreshold').value / 100;
+        var significantResults = 0;
+
+        d3.selectAll('.innerSegment').each(function (d) {
+            numRects++;
+            if (d.values[0].pValue != null) {
+                testsRun++;
+                if (d.values[0].pValue < significance)
+                    significantResults++;
+            }
+        });
+
+        document.getElementById('numRects').textContent = numRects;
+        document.getElementById('testsRun').textContent = testsRun;
+        document.getElementById('significance').textContent = d3.format('.1%')(significance);
+        document.getElementById('significantResults').textContent = significantResults;
+    }
+
+
+    document.getElementById('enterFilterModeButton').onclick = enterFilterMode;
+
+    function enterFilterMode() {
+        //swap which button is hidden
+        document.getElementById('enterFilterModeButton').hidden = true;
+        document.getElementById('applyFilterButton').hidden = false;
+
+        //disable other controls
+        d3.select('#filterbar').selectAll('input, button, select')
+            .property('disabled', true);
+        d3.select('#applyFilterButton').property('disabled', false);
+
+        //unhide checkboxes
+        d3.selectAll('.legendEntry>input[type=checkbox], #chartcell>input[type=checkbox]')
+            .attr('hidden', null);
+
+
+        var clearedRowCheckboxes = d3.selectAll('.legendEntry>input[type=checkbox]')
+            .filter(function () {
+                return this.checked == false;
+            });
+        var clearedColumnCheckboxes = d3.selectAll('#chartcell>input[type=checkbox]')
+            .filter(function () {
+                return this.checked == false;
+            });
+
+        if (clearedRowCheckboxes.size() > 0 || clearedColumnCheckboxes.size() > 0) { //if there is at least 1 cleared checkbox
+            //redraw Mekko chart with ALL columns and rows
+            svg.selectAll('.outerSegment, .axisTitle').remove();
+            drawMarimekko(nestedData);
+            updatePValueHighlighting();
+            printOverallStats();
+
+            //darken rows with cleared checkboxes
+            clearedRowCheckboxes.each(function (innerKey) {
+                d3.selectAll('.innerSegment rect').filter(d => d.key == innerKey) //selection of every rect in a row
+                    .classed('darkened', true)
+                    .style('fill', d => darkColor(d.key));
+            });
+
+            //darken columns with cleared checkboxes
+            clearedColumnCheckboxes.each(function (os) {
+                d3.selectAll('.innerSegment rect').filter(d => d.parent.key == os.key)  //selection of every rect in a column
+                    .classed('darkened', true)
+                    .style('fill', d => darkColor(d.key));
+            });
+        }
+        //else, the Mekko chart on screen should already include all columns and rows
+    }
+
+
+    document.getElementById('applyFilterButton').onclick = applyFilter;
+
+    function applyFilter() {
+        //swap which button is hidden
+        document.getElementById('applyFilterButton').hidden = true;
+        document.getElementById('enterFilterModeButton').hidden = false;
+
+        //re-enable other controls
+        d3.select('#filterbar').selectAll('input, select, button')
+            .property('disabled', false);
+
+        //hide checkboxes
+        d3.selectAll('.legendEntry>input[type=checkbox], #chartcell>input[type=checkbox]')
+            .attr('hidden', true);
+
+        //request (possibly) filtered set of mekko chart data from server; draw Mekko chart
+        d3.csv('/')
+            .header('content-type', 'application/json')
+            .row(rcf)
+            .post(JSON.stringify(filters), function (error, newFilteredData) {
+                if (error) throw error;
+
+                svg.selectAll('.outerSegment, .axisTitle').remove();
+
+                var nestedFilteredData = nestData(newFilteredData);
+
+                drawMarimekko(nestedFilteredData);
+
+                //don't need to redraw entire legend; just recompute row totals and update hover text
+                //need total sum of students for hover text
+                var totalSum = nestedFilteredData.reduce(function (v, os) {
+                    return v + os.values.reduce(function (v, d) {
+                        return v + d.values[0].value;
+                    }, 0);
+                }, 0);
+
+                //recompute row totals and update hover text
+                d3.select('#legend').selectAll('div')
+                    .attr('title', function (key) {
+                        var numStudents = 0;
+                        for (var o of nestedFilteredData) {
+                            for (var i of o.values) {
+                                if (i.key == key)
+                                    numStudents += i.values[0].value;
+                            }
+                        }
+
+                        return key + '\n' + numStudents + ' students\n' + d3.format('.1%')(numStudents / totalSum);
+                    });
+
+                updatePValueHighlighting();
+                printOverallStats();
+            });
+    }
+
+
+    //reverse X checkbox
+    document.getElementById('reverseX').onchange = reverseX;
+
+    function reverseX() {
+        //clear row/column filtering parameters from filters object
+        for (var i in filters.omitColumns)
+            delete filters.omitColumns[i];
+
+        for (var i in filters.omitRows)
+            delete filters.omitRows[i];
+
+        //clear svg graphics and column checkboxes
+        svg.selectAll('.outerSegment, .axisTitle').remove();
+        d3.selectAll('#chartcell>input[type=checkbox]').remove();
+
+        //un-crossout all legend entries and check all row checkboxes (to match state of filters.omitRows object)
+        d3.selectAll('.legendEntry')
+            .classed('linethrough', false)
+            .selectAll('input[type=checkbox]')
+            .property('checked', true);
+
+        nestedData.reverse();
+
+        drawMarimekko(nestedData);  //this re-adds the column checkboxes
+        updatePValueHighlighting();
+    }
+
+
+    //reverse Y checkbox
+    document.getElementById('reverseY').onchange = reverseY;
+
+    function reverseY() {
+        //clear row/column filtering parameters from filters object
+        for (var i in filters.omitColumns)
+            delete filters.omitColumns[i];
+
+        for (var i in filters.omitRows)
+            delete filters.omitRows[i];
+
+        //clear graphics
+        svg.selectAll('.outerSegment, .axisTitle').remove();
+        d3.select('#legend').selectAll('*').remove();
+        d3.selectAll('#chartcell>input[type=checkbox]').remove();
+
+        for (var os of nestedData)
+            os.values.reverse();
+
+        drawMarimekko(nestedData);
+        drawLegend(innerKeys);
+        updatePValueHighlighting();
+    }
+
+</script>
+
+</body>
+</html>

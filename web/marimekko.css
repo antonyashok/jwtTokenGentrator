@@ -1,0 +1,58 @@
+body {font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans;
+    /*background-color: #f0eff7;*/
+    background-color: #e6e9f0;}
+
+/*filter bar*/
+#filterbar { background-color: #bccbde;
+    font-size: 15px;
+    color: #431c5d;
+    z-index: 1;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    padding: 5px;
+    width: 300px;
+    height: 100vh;
+    overflow: auto;}
+.nobreak {display: inline-block;}
+#applyFilterButton {font-weight: bold;}
+
+/*the 'by' in the graph title*/
+h1 span {color: grey;}
+
+/*place chart and legend side by side*/
+#main {display: table; transform: translateX(310px); margin: 20px}
+#chartcell, #legendcell {
+    display: table-cell;
+    vertical-align: top;
+    position: relative;
+}
+
+#chart {box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+    background-color: white;    margin-right: 40px;
+}
+#chart rect{stroke: #000;}
+#chart text{font-size:14px;}
+#chart .axisTitle{text-anchor: middle; font-weight: bold; font-size: 16px;}
+
+/*filter-related dimming, darkening and crossing out*/
+.dimmed1 {opacity: 0.15;}
+.dimmed2 {opacity: 0.02;}
+.darkened {opacity: 1;}
+.linethrough {text-decoration: line-through;}
+
+#legend {box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+    background-color: white; overflow: auto; height: 400px;}
+.legendEntry {margin: 5px; font-size: 14px;}
+.colorBox {display: inline-block; width: 15px; height: 15px;}
+
+#stats {
+    margin-top: 30px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+    background-color: white;}
+
+/*interactivity indications*/
+input[type=checkbox], select, button {cursor: pointer;}
+.legendEntry:hover, .outerSegment>text:hover {font-weight: bold;}
+
+#percentage{transform: translateY(-20px)}

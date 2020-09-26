@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="container" style="width: 75%;">
+    <canvas id="canvas"></canvas>
+</div>
+</body>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/Chart.js"></script>
+
+<script>
+    let request = {graphtype: "discussionSummary"};
+
+    d3.csv('/')
+        .header('content-type', 'application/json')
+        .post(JSON.stringify({graphtype: 'discussionSummary'}), function (error, data) {
+            if (error) throw error;
+            data.sort((a, b) => d3.ascending(a["Discussion Category"], b["Discussion Category"]));
+            drawDiagram(data);
+        });
+
+    function drawDiagram(data) {
+
+        key = data.columns.slice(1);
+        groupKey = data.columns[0];
+
+
+      //  const dataNew = data.map(d => ({d[groupKey]: key.map(k => d[k])}));
+
+        const dataNew = data.map(d => {d[groupKey]: 0});
+        console.log("key "+ dataNew);
+        console.log("dataNew ",dataNew.map(d => parseInt(d[0])));
+        var ctx = document.getElementById('canvas').getContext('2d');
+        const horizontalBarChartData = {
+            labels: data.map(d => d[groupKey]),
+
+            datasets:[{
+                label: "Viewed",
+                data: dataNew.map(d => parseInt(d[0]))
+        }, {
+            label: "StudentViewed",
+                data: dataNew.map(d => parseInt(d[1]))
+        },{
+                label: "post",
+                    data: dataNew.map(d => parseInt(d[2]))
+        },{
+            label: "studentPost",
+                data: dataNew.map(d => parseInt(d[3]))
+        },{
+            label: "response",
+                data: dataNew.map(d => parseInt(d[4]))
+        },{
+            label: "studentResponse",
+                data: dataNew.map(d => parseInt(d[5]))
+        },
+    ]
+
+        }
+        const myBarChart = new Chart(ctx, {
+            type: 'horizontalBar',
+            backgroundColor: "#BC151E",
+            borderColor: "#D3B178",
+            borderWidth: 1,
+            data: horizontalBarChartData,
+            options: {
+                // Elements options apply to all of the options unless overridden in a dataset
+                // In this case, we are setting the border of each horizontal bar to be 2px wide
+                elements: {
+                    rectangle: {
+                        borderWidth: 2,
+                    }
+                },
+                responsive: true,
+                legend: {
+                    position: 'right',
+                },
+                title: {
+                    display: true,
+                    text: 'Chart.js Horizontal Bar Chart'
+                }
+            }
+            }
+
+
+        )
+
+    }
+
+</script>
+</html>

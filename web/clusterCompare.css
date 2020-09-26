@@ -1,0 +1,83 @@
+body{
+    font: 300 1em/1.8 PingFang SC, Lantinghei SC, Microsoft Yahei, Hiragino Sans GB, Microsoft Sans Serif, WenQuanYi Micro Hei, sans;
+
+    background-color: #e6e9f0;
+
+}
+
+#maincontent{
+    position: absolute;
+    top: 20px;
+    left: 100px;
+}
+.nobreak input {
+    margin-right: 20px;
+}
+svg{box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+background: white;
+}
+
+#chart stop{stop-color: #A04;} /*color for leave links*/
+/*3-path leave link styling*/
+.leave path:not(:only-of-type):first-of-type{stroke: url(#grad1);}
+.leave path:not(:only-of-type):not(:hover):nth-of-type(2){stroke: url(#grad2);}
+.leave path:not(:only-of-type):last-of-type{stroke: url(#grad3);}
+
+/*hover styling*/
+.link:hover path, .keylink:hover path{stroke-opacity: .7;}
+
+.leave:hover path:not(:only-of-type):first-of-type{visibility: hidden;}
+.leave:hover path:not(:only-of-type):last-of-type{visibility: hidden;}
+
+
+.dimmed, .dimmed2{
+    opacity: .1;
+}
+
+#key{position: relative; }
+
+/*node styling*/
+.node rect {
+    cursor: move;
+    shape-rendering: crispEdges;
+}
+
+.node text {
+    pointer-events: none;
+    text-shadow: 0 1px 0 #fff;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+.node .discussion {
+    fill: #AA0044;
+    font-size: 0.7em;
+}
+
+/*link styling*/
+.link path, .keylink path{
+    cursor: pointer;
+    fill: none;
+    stroke: #777;
+    stroke-opacity: .4;
+}
+
+.backward path{
+    stroke: #153;
+}
+
+.jump path{ /*presumed forward*/
+    stroke-dasharray: 18,2;
+    stroke: #04A;
+}
+
+.backward.jump path{
+    stroke: #070;
+}
+
+.leave path{
+    stroke: #A04;
+    stroke-dasharray: initial;
+}
+
+

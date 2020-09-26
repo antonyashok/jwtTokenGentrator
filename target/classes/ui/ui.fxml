@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- <?import ui.NumberField?>
+ -->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="637.0" prefWidth="869.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.UIController">
+   <children>
+      <VBox layoutX="1.0" prefHeight="637.0" prefWidth="869.0" style="-fx-background-color: #e6e9f0;">
+         <children>
+            <RadioButton fx:id="cacheRB" mnemonicParsing="false" text="Use processed data">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin></RadioButton>
+            <GridPane fx:id="cacheFields" hgap="10.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="293.0" minWidth="10.0" prefWidth="275.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="426.0" minWidth="10.0" prefWidth="342.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="327.0" minWidth="10.0" prefWidth="204.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <TextField fx:id="cacheFileField" prefHeight="30.0" prefWidth="228.0" GridPane.rowIndex="1" />
+                  <Button mnemonicParsing="false" onAction="#selectCacheFile" prefHeight="27.0" prefWidth="318.0" style="-fx-background-color: #bccbde;" text="Select processed data file" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets />
+                     </GridPane.margin>
+                  </Button>
+                  <Text fx:id="cacheFileError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+               </children>
+               <padding>
+                  <Insets bottom="10.0" top="10.0" />
+               </padding>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </GridPane>
+            <RadioButton fx:id="rawRB" mnemonicParsing="false" text="Use raw logs and tables">
+               <font>
+                  <Font size="18.0" />
+               </font></RadioButton>
+            <GridPane fx:id="rawFields" hgap="10.0" prefHeight="222.0" prefWidth="829.0" vgap="15.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="354.0" minWidth="10.0" prefWidth="275.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="409.0" minWidth="10.0" prefWidth="319.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="296.0" minWidth="10.0" prefWidth="231.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <TextField fx:id="courseFolderField" />
+                  <Button lineSpacing="1.0" mnemonicParsing="false" onAction="#selectCourseFolder" prefHeight="27.0" prefWidth="323.0" style="-fx-background-color: #bccbde;" text="Select folder with course data" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets />
+                     </GridPane.margin></Button>
+                  <TextField fx:id="logFolderField" GridPane.rowIndex="1" />
+                  <Button mnemonicParsing="false" onAction="#selectLogFolder" prefHeight="27.0" prefWidth="332.0" style="-fx-background-color: #bccbde;" text="Select folder with log files (and ONLY log files)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <TextField fx:id="surveyFilesField" GridPane.rowIndex="2" />
+                  <TextField fx:id="newCacheFileField" GridPane.rowIndex="3" />
+                  <TextField fx:id="userIgnoreListField" GridPane.rowIndex="4" />
+                  <TextField fx:id="customFilterListField" GridPane.rowIndex="5" />
+                  <Button mnemonicParsing="false" onAction="#selectSurveyResultFiles" prefHeight="27.0" prefWidth="340.0" style="-fx-background-color: #bccbde;" text="Select Qualtrics survey result files (optional)" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Button mnemonicParsing="false" onAction="#selectCacheOutFile" prefHeight="27.0" prefWidth="360.0" style="-fx-background-color: #bccbde;" text="File to save processed data to (optional)" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                  <Button mnemonicParsing="false" onAction="#selectUserIgnoreList" prefHeight="27.0" prefWidth="385.0" style="-fx-background-color: #bccbde;" text="Select user ignore list file (optional)" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <Button mnemonicParsing="false" onAction="#selectCustomFilterList" prefHeight="20.0" prefWidth="320.0" style="-fx-background-color: #bccbde;" text="Select list of IDs for custom filter (Optional)" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                  <Text fx:id="courseFolderError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" />
+                  <Text fx:id="logFolderError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <Text fx:id="surveyFilesError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                  <Text fx:id="newCacheFileError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                  <Text fx:id="userIgnoreListError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+                  <Text fx:id="customFilterListError" fill="#ff0303" strokeType="OUTSIDE" strokeWidth="0.0" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+               </children>
+               <padding>
+                  <Insets bottom="20.0" top="10.0" />
+               </padding>
+            </GridPane>
+            <CheckBox fx:id="clusteringRB" mnemonicParsing="false" text="Clustering" translateY="-10.0">
+               <font>
+                  <Font size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="20.0" />
+               </VBox.margin></CheckBox>
+            <GridPane hgap="10.0" prefHeight="150.0" prefWidth="720.0" vgap="15.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="355.0" minWidth="10.0" prefWidth="157.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="556.0" minWidth="10.0" prefWidth="170.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="556.0" minWidth="10.0" prefWidth="453.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <ChoiceBox fx:id="algorithmChoice" prefHeight="27.0" prefWidth="168.0" style="-fx-background-color: #bccbde;" GridPane.columnIndex="1">
+                     <GridPane.margin>
+                        <Insets bottom="5.0" />
+                     </GridPane.margin></ChoiceBox>
+                  <CheckBox fx:id="expectedMovement" mnemonicParsing="false" text="expectedMovement" GridPane.rowIndex="3" />
+                  <TextField fx:id="clusterNum" minHeight="-Infinity" minWidth="-Infinity" prefHeight="27.0" prefWidth="168.0" text="2" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="100.0" top="5.0" />
+                     </GridPane.margin></TextField>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Clustering Number" wrappingWidth="195.2060546875" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="forwardMovement" mnemonicParsing="false" text="forwardMovement" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                  <CheckBox fx:id="backwardMovement" mnemonicParsing="false" text="backwardMovement" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                  <CheckBox fx:id="visited" mnemonicParsing="false" text="visited" GridPane.rowIndex="4" />
+                  <CheckBox fx:id="revisited" mnemonicParsing="false" text="revisited" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <CheckBox fx:id="viewForMovement" mnemonicParsing="false" text="view/Movement" GridPane.rowIndex="5" />
+                  <CheckBox fx:id="postForStatement" mnemonicParsing="false" text="post/Statement" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                  <CheckBox fx:id="statementForView" mnemonicParsing="false" text="statement/View" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Choose A Algorithm">
+                     <GridPane.margin>
+                        <Insets bottom="5.0" />
+                     </GridPane.margin></Text>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Attributes" GridPane.rowIndex="2" />
+               </children>
+            </GridPane>
+            <HBox prefHeight="27.0" prefWidth="257.0">
+               <children>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="PORT" wrappingWidth="98.02001953125">
+                     <HBox.margin>
+                        <Insets top="5.0" />
+                     </HBox.margin>
+                  </Text>
+                  <TextField fx:id="portField" onTextChange="#handlePortChange" text="8001" />
+                  <Text fx:id="portError" strokeType="OUTSIDE" strokeWidth="0.0" />
+               </children>
+               <VBox.margin>
+                  <Insets top="40.0" />
+               </VBox.margin>
+            </HBox>
+            <Text fx:id="progressText" strokeType="OUTSIDE" strokeWidth="0.0" />
+            <GridPane prefHeight="24.0" prefWidth="829.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="420.0" minWidth="10.0" prefWidth="197.0" />
+                <ColumnConstraints hgrow="SOMETIMES" maxWidth="726.0" minWidth="10.0" prefWidth="232.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="726.0" minWidth="10.0" prefWidth="201.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="726.0" minWidth="10.0" prefWidth="489.0" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints />
+              </rowConstraints>
+               <children>
+                  <Button fx:id="startBtn" mnemonicParsing="false" onAction="#handleStart" prefHeight="27.0" prefWidth="131.0" style="-fx-background-color: #bccbde;" text="START" />
+                  <Button fx:id="stopBtn" mnemonicParsing="false" onAction="#handleStopServer" prefHeight="27.0" prefWidth="136.0" style="-fx-background-color: #bccbde;" text="STOP" GridPane.columnIndex="1" />
+               </children>
+            </GridPane>
+            <Text fx:id="exceptionText" strokeType="OUTSIDE" strokeWidth="0.0" />
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+      </VBox>
+   </children>
+</AnchorPane>

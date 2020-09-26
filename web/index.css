@@ -1,0 +1,18 @@
+body{
+    background-color: #e6e9f0;
+}
+#navbar{
+    background-color: #bccbde;
+    margin-bottom: 30px;
+}
+
+.btn-primary {
+    background-color: #431c5d;
+    border: #bccbde;
+}
+
+.card{
+    margin: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+}
+

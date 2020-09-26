@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href=clusterCompare.css rel=stylesheet type=text/css>
+</head>
+<body>
+<div id=maincontent>
+    <h1 id=chart-title></h1>
+    <div class="nobreak">
+    <label for="minLinkSizeInput">Min. Link Size Shown: </label>
+    <input id="minLinkSizeInput" type="number" name="minLinkSize" min=1 max=100 value=25  required>
+    <label for="Leave-link"> Leave-link Opacity: </label>
+    <input id="Leave-link" type="range" name="leaveLinkOpacity" min=0 max=1 step=.1 value=.2>
+    <label for="diagramwidth">Diagram Width:</label>
+    <input id="diagramwidth" type="range" name="diagramwidth" min=100 max=10000 step=500 value=4000>
+    </div>
+    <svg id=key width=700 height=90>
+        <text dy=1em dx=250 text-anchor=middle>legend</text>
+        <g transform=translate(0,30)>
+            <g class=keylink transform=translate(20,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Viewed next step</text>
+            </g>
+            <g class='keylink backward' transform=translate(20,30)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Viewed previous step</text>
+            </g>
+            <g class='keylink jump' transform=translate(250,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Jumped ahead</text>
+            </g>
+            <g class='keylink backward jump' transform=translate(250,30)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Jumped back</text>
+            </g>
+            <g class='keylink leave' transform=translate(460,0)>
+                <path d=M0,10h50 stroke-width=20></path>
+                <text dx=54px dy=1em>Didn't view any more steps</text>
+            </g>
+        </g>
+    </svg>
+    <svg id="chart" style="visibility: visible; ">
+        <defs>
+            <linearGradient id=grad1>
+                <stop offset="0%" style="stop-opacity:1"/>
+                <stop offset=100% style="stop-opacity:0"/>
+            </linearGradient>
+            <linearGradient id=grad2>
+                <!--only 1 stop, but use a gradient anyway to keep it consistent-->
+                <stop offset=0%/>
+            </linearGradient>
+            <linearGradient id=grad3>
+                <stop offset="0%" style="stop-opacity:0"/>
+                <stop offset=100% style="stop-opacity:1"/>
+            </linearGradient>
+        </defs>
+    </svg>
+</div>
+<script src="lib/d3.v4.min.js"></script>
+<script src="lib/sankey-w-loops.js"></script>
+<script src="clusteringSankey.js"></script>
+<script>
+    const height = 1500;
+    const width = 4120;
+    const scale = 0.3;
+    let svgArray = [];
+    const clusterNum = localStorage.getItem("hasCluster");
+    if (localStorage.getItem("hasCluster") != 0) {
+
+        let statNode = document.getElementById("chart");
+
+
+        for(let i = 0; i< clusterNum; i++){
+
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+            const clusterIndex = document.createElement("div");
+            clusterIndex.textContent = i;
+
+            svg.id = "cluster"+i;
+
+
+            statNode.after(svg);
+
+            clusteringSankey("#"+svg.id, i);
+            //statNode = svg;
+            let left =  -(document.getElementById("diagramwidth").value - 50 - 50)* 0.36;
+            let top = -height*0.15 + i*height* 0.31;
+            svg.setAttribute("style", `transform: scale3d(0.3, 0.3, 0.3); transition-property: transform; transition-duration: 0.25s; transition-timing-function: ease; position: absolute; top: ${top}; left: ${left};`)
+
+            svgArray.push("#"+svg.id);
+
+            svg.addEventListener("click", ()=>{
+                svg.setAttribute("style", `transition-property: transform; transition-duration: 0.25s; transition-timing-function: ease; position: absolute;`);
+                window.location.href= "vdSankey.html";
+                localStorage.setItem("clusterIndex", i);
+            })
+
+            svg.addEventListener("mouseover", ()=>{
+                svg.style.transform = "scale3d(0.4,0.4,0.4)"
+            })
+
+            svg.addEventListener("mouseout", ()=>{
+                svg.style.transform = "scale3d(0.3,0.3,0.3)"
+
+            })
+
+        }
+
+
+    }
+
+    document.getElementById("minLinkSizeInput").oninput = function (e) {
+        if (e.target.validity.valid) {
+
+
+            for(let i = 0; i < clusterNum; i++){
+                const svg = d3.select(svgArray[i]);
+                svg.selectAll('*').remove();
+
+                clusteringSankey(svgArray[i], i);
+            }
+        }
+    };
+
+
+    document.getElementById("diagramwidth").oninput = function (e) {
+
+
+            for(let i = 0; i < clusterNum; i++){
+                const svg = d3.select(svgArray[i]);
+                const svgHtml = document.getElementById(svgArray[i].split("#")[1]);
+                svg.selectAll('*').remove();
+
+                clusteringSankey(svgArray[i], i);
+
+                let left = -(document.getElementById("diagramwidth").value - 50 - 50)* 0.36;
+                let top = -height*0.15 + i*height* 0.31;
+                svgHtml.setAttribute("style", `transform: scale3d(0.3, 0.3, 0.3); transition-property: transform; transition-duration: 0.25s; transition-timing-function: ease; position: absolute; top: ${top}; left: ${left};`)
+
+
+            }
+
+    };
+
+    document.getElementById("Leave-link").oninput = function (e) {
+        document.querySelector("#grad2 stop").setAttribute("stop-opacity", e.target.value);
+    };
+
+
+
+</script>
+
+</body>
+</html>

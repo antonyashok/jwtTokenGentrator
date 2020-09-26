@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+<title>Daily Active Times</title>
+  <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.css">
+  <link rel="stylesheet" href="index.css">
+<style>
+.line{stroke: steelblue; fill: none;}
+.line:hover{stroke: firebrick; stroke-width: 4;}
+#averageLine{stroke: black; stroke-width: 3; fill: none;}
+#averageLine:hover{stroke: red; stroke-width: 4; fill: none}
+#gridlines-v line, #gridlines-h line{stroke: black; stroke-opacity: 0.2;}
+.tick text{font-size: 14px;}
+#modeselect {width: 800px}
+</style>
+</head>
+<body style="margin-left: 50px">
+
+<h1></h1>
+<div id=modeselect>
+  <div class="form-group row">
+    <label class="col-sm-1" for=fromDate>from</label>
+    <input  class="col-sm-3" type=date id=fromDate>
+
+    <label  class="col-sm-1" for=toDate style="transform: translateX(30px)">to</label>
+    <input  class="col-sm-3" type=date id=toDate>
+    <input  class="col-sm-1" id=normalize type=checkbox style="transform: translateX(50px)">
+    <label   class="col-sm-3" for=normalize>Normalize per-day</label>
+  </div>
+</div>
+<svg id=chart width=960 height=500></svg>
+
+<script src='lib/d3.v4.min.js'></script>
+<script>
+//setup margins
+var margin = {top: 20, right: 20, bottom: 120, left: 50};
+
+var svg = d3.select('#chart');
+var width = svg.attr('width') - margin.left - margin.right;
+var height = svg.attr('height') - margin.top - margin.bottom;
+svg = svg.append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+//scales, range setup
+var x = d3.scaleUtc().rangeRound([0, width]);
+var y = d3.scaleLinear().rangeRound([height, 0]);
+
+var lastData = null;  //last data received; unfiltered
+
+var fromDate = null;  //defaults will be fetched from server
+var toDate = null;
+
+var normalize = document.getElementById('normalize').checked;
+var normalizeDone = false;  //flag indicating if normalized counts have already been added to data objects
+
+d3.json('/')  //fetch course start date
+    .header('content-type','application/json')
+    .post(JSON.stringify({data:'startDate'}), function(error, data){
+      //data looks something like [2018, 0, 5] - 5 January 2018
+      //set default fromDate to course start date
+      fromDate = new Date(Date.UTC(data[0], data[1], data[2]));
+      document.getElementById('fromDate').valueAsDate = fromDate;
+    });
+
+d3.json('/')  //fetch course end date
+    .header('content-type','application/json')
+    .post(JSON.stringify({data:'endDate'}), function(error, data){
+      //data looks something like [2018, 0, 5] - 5 January 2018
+      //set default toDate to course end date
+      toDate = new Date(Date.UTC(data[0], data[1], data[2]));
+      document.getElementById('toDate').valueAsDate = toDate;
+    });
+
+
+d3.csv('/') //fetch activity vs time data
+    .header('content-type','application/json')
+    .row(rcf)
+    .post(JSON.stringify({graphtype:'activetime'}), function(error, data){
+      if(error) throw error;
+      while(fromDate==null || toDate==null) //TODO: what if these can't be found and they remain null?
+        ;//wait for start end end dates to be returned
+
+      lastData = data;
+      update();
+    });
+
+
+function update(){
+  svg.selectAll('*').remove();
+  filteredData = timeFilter(lastData);
+  drawLines(filteredData);
+}
+
+
+document.getElementById('fromDate').oninput = function(){
+  fromDate = document.getElementById('fromDate').valueAsDate;
+  update();
+}
+
+
+document.getElementById('toDate').oninput = function(){
+  toDate = document.getElementById('toDate').valueAsDate;
+  update();
+}
+
+
+document.getElementById('normalize').onchange = function(){
+  normalize = document.getElementById('normalize').checked;
+  update();
+}
+
+
+//row conversion function
+function rcf(d, i, colNames){
+  //coerce 2nd column to numbers
+  d[colNames[1]] = +d[colNames[1]];
+  //convert 1st column to Date objects
+  var fields = JSON.parse(d[colNames[0]]);
+  d[colNames[0]] = new Date(Date.UTC(fields[0], fields[1], fields[2], fields[3], fields[4]));
+  return d;
+}
+
+
+//filter for data between fromDate and toDate; returns a new array; new array includes columns property
+function timeFilter(data){
+  var col0=data.columns[0];
+
+  var toDateNextDay = new Date(toDate.valueOf());
+  toDateNextDay.setUTCDate(toDateNextDay.getUTCDate()+1); //permit data up to end of toDate
+
+  filteredData = data.filter(d => d[col0] >= fromDate && d[col0] < toDateNextDay);
+  filteredData.columns = data.columns;  //re-add columns property because .filter() produces a new array that doesn't have it
+  return filteredData;
+}
+
+
+function drawLines(data){//data = array of (Date object):(number) pairs
+  var col0=data.columns[0];
+  var col1=data.columns[1];
+
+  //scales, domain setup
+  //default x domain is 1 day wide, which is what we want
+  if(normalize === true)
+    y.domain([0, 1]);
+  else
+    y.domain([0, d3.max(data, d => d[col1])]).nice();
+
+  //draw axes
+  svg.append('g')
+      .attr('id', 'axis-x')
+      .attr('transform', 'translate(0,' + height + ')')
+      .call(d3.axisBottom(x)
+                .tickFormat(d3.utcFormat('%H:%M')) )
+    .selectAll('text')  //select all tick labels
+      .attr('text-anchor', 'end')
+      .attr('transform', 'rotate(-90)')
+      .attr('dx', '-.8em')
+      .attr('dy', '-.3em');
+
+  svg.append('g')
+      .attr('id', 'axis-y')
+      .call(d3.axisLeft(y));
+
+  //draw gridlines; 0.5px nudge makes lines sharper for some reason
+  svg.append('g')
+      .attr('id', 'gridlines-v')
+    .selectAll('line')
+      .data(x.ticks(d3.utcHour).map(date => x(date)))
+    .enter().append('line')
+      .attr('x1', d => d+0.5)
+      .attr('x2', d => d+0.5)
+      .attr('y1', height)
+      .attr('y2', 0);
+
+  svg.append('g')
+      .attr('id', 'gridlines-h')
+    .selectAll('line')
+      .data(y.ticks().map(num => y(num)))
+    .enter().append('line')
+      .attr('x1', 0)
+      .attr('x2', width)
+      .attr('y1', d => d+0.5)
+      .attr('y2', d => d+0.5);
+
+  //draw axis titles
+  svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('x', width/2)
+      .attr('y', height+margin.bottom-20)
+      .text('Time of Day (UTC)');
+
+  svg.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -height/2) //x and y given in rotated coordinate system
+      .attr('y', -margin.left+20)
+      .text(normalize === true ?
+        'Number of Students (Normalized for Daily Peak)' : 'Number of Students' );
+
+  //add graph title
+  d3.select('h1')
+      .text('Daily Activity');
+
+  //nest by year-month-day
+  var nestedData = d3.nest()
+      .key(function(d){//TODO: could just round ms value down to nearest multiple of [# of ms in a day]?
+        var year = d[col0].getUTCFullYear();
+        var month = d[col0].getUTCMonth();
+        var date = d[col0].getUTCDate();
+        return new Date(Date.UTC(year, month, date)).valueOf();  //ms since unix epoch
+      })
+      //.sortKeys(d3.ascending) //not really necessary since data comes in chrono order
+      .entries(data);
+
+
+  if(normalize === true && normalizeDone === false){
+    //add field with normalized (for day) count for each data object
+    for(var group of nestedData){
+      var max = d3.max(group.values, d => d[col1]);
+      group.values.forEach(function(d){
+        d.normalized = d[col1]/max; //add a 'normalized' property to store the normalized count
+      });
+    }
+    normalizeDone = true;
+  }
+
+
+  //line generator; takes an array, returns a path string for it
+  line = d3.line()
+      //x accessor ignores fields bigger than hours; uses 1 Jan 2000 in their place
+      .x(d => x(new Date( Date.UTC(2000, 0, 1, d[col0].getUTCHours(), d[col0].getUTCMinutes())))) //x data accessor
+      .y( normalize ? (d => y(d.normalized)) : (d => y(d[col1])) );//y data accessor
+
+  //draw lines
+  svg.append('g')
+      .attr('id', 'lines')
+    .selectAll('path')
+      .data(nestedData)
+    .enter().append('path')
+      .attr('class', 'line')
+      .attr('d', d => line(d.values) );  //use line generator
+
+  //nest by hour-of-day; key = 0~23
+  var nestedDataByHourOfDay = d3.nest()
+      .key(d => d[col0].getUTCHours())
+      .sortKeys((a,b) => d3.ascending(+a,+b)) //numerical order, ascending
+      .rollup(values => d3.mean(values, normalize ? (d => d.normalized) : (d => d[col1]) ))  //get average of values array
+      .entries(data);
+
+  //convert keys to Date objects
+  for(var obj of nestedDataByHourOfDay)
+    obj.key = new Date(Date.UTC(2000,0,1,+obj.key));
+
+
+  //new line generator for average line
+  var avgLine = d3.line()
+      .x(d => x(d.key))
+      .y(d => y(d.value));
+
+  //draw average line
+  d3.select('#lines').append('path')
+      .attr('id', 'averageLine')
+      .attr('class', 'line')
+      .datum(nestedDataByHourOfDay)
+      .attr('d', avgLine);  //pass line generator
+
+
+  //add tooltips to lines showing what day they were for
+  var formatDate = d3.utcFormat('%a, %d %b %Y');
+  d3.selectAll('.line:not(#averageLine)').append('title')
+      .text(d => formatDate(new Date(+d.key)) );
+  d3.select('#averageLine').append('title')
+      .text('Average for: '+formatDate(fromDate)+' to '+formatDate(toDate));
+}
+
+
+</script>
+
+</body>
+</html>
